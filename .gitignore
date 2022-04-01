@@ -7,3 +7,6 @@ __pycache__
 *.egg-info
 *.egg
 
+# BMRC submissions
+bmrcs/bmrc_*.sh
+submit_pipeline-*.sh
