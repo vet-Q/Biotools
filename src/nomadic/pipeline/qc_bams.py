@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from dataclasses import dataclass
 from nomadic.lib.generic import print_header, print_footer, produce_dir
-from nomadic.lib.parsing import barcode_input_parser
+from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
     HomoSapiens,
@@ -237,12 +237,12 @@ class ReadGroupingHistogram:
             plt.close(fig)
 
 
-def main():
+def main(expt_dir, config, barcode):
     # PARSE INPUTS
     script_descrip = "NOMADIC: Quality control analysis of .bam files"
-    script_dir = "qc-bams"
     t0 = print_header(script_descrip)
-    params = barcode_input_parser(sys.argv, descrip=script_descrip)
+    script_dir = "qc-bams"
+    params = build_parameter_dict(expt_dir, config, barcode)
 
     # Focus on a single barcode, if specified
     if "focus_barcode" in params:
