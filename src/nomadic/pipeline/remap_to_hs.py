@@ -1,15 +1,7 @@
-"""
-NOMADIC: Run mapping to Homo Sapiens, optionally on BMRC
-J. Hendry, 2022/02/26
-
-
-"""
-
-
 import sys
 import subprocess
 from nomadic.lib.generic import print_header, print_footer
-from nomadic.lib.parsing import barcode_input_parser
+from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_bams import samtools_index
 from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
@@ -31,12 +23,12 @@ def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
     return None
 
 
-def main():
+def main(expt_dir, config, barcode):
     # PARSE INPUTS
     script_descrip = "NOMADIC: Re-map unmapped reads to Homo Sapiens"
     t0 = print_header(script_descrip)
     script_dir = "bams"
-    params = barcode_input_parser(sys.argv, descrip=script_descrip)
+    params = build_parameter_dict(expt_dir, config, barcode)
 
     # Focus on a single barcode, if specified
     if "focus_barcode" in params:

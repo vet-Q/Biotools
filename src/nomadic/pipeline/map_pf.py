@@ -1,25 +1,24 @@
-"""
-NOMADIC: Run mapping, optionally on BMRC
-J. Hendry, 2022/02/26
-
-"""
-
-
 import os
 import sys
 from nomadic.lib.generic import print_header, print_footer, produce_dir
-from nomadic.lib.parsing import barcode_input_parser
+from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_bams import samtools_index
 from nomadic.lib.mapping import Mapper
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 
 
-def main():
+def main(expt_dir, config, barcode):
+    """
+    Map .fastq files found in the experiment directory `expt_dir` to the
+    P. falciparum reference genome.
+    
+    """
+
     # PARSE INPUTS
     script_descrip = "NOMADIC: Map .fastq files to Plasmodium falciparum"
     t0 = print_header(script_descrip)
     script_dir = "bams"
-    params = barcode_input_parser(sys.argv, descrip=script_descrip)
+    params = build_parameter_dict(expt_dir, config, barcode)
 
     # Focus on a single barcode, if specified
     if "focus_barcode" in params:
@@ -69,4 +68,6 @@ def main():
 
     
 if __name__ == "__main__":
+
+    # Then I probably just add the decorator? Or...?
     main()
