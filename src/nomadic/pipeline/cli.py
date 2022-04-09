@@ -1,3 +1,4 @@
+from cmath import exp
 import click
 
 
@@ -36,9 +37,16 @@ def runall(expt_dir, config, barcode):
     Run the complete NOMADIC pipeline
     
     """
-    from nomadic.pipeline import map_pf, remap_to_hs
+    from nomadic.pipeline import (
+        map_pf, 
+        remap_to_hs,
+        qc_bams,
+        target_extraction
+    )
     map_pf.main(expt_dir, config, barcode)
     remap_to_hs.main(expt_dir, config, barcode)
+    qc_bams.main(expt_dir, config, barcode)
+    target_extraction(expt_dir, config, barcode)
 
 @cli.command(short_help="Map to P.f. reference.")
 @common_options
@@ -76,7 +84,7 @@ def qcbams(expt_dir, config, barcode):
     qc_bams.main(expt_dir, config, barcode)
 
 
-@cli.command(short_help="Analyse amplicon targets")
+@cli.command(short_help="Analyse amplicon targets.")
 @common_options
 def targets(expt_dir, config, barcode):
     """
@@ -89,6 +97,18 @@ def targets(expt_dir, config, barcode):
     """
     from nomadic.pipeline import target_extraction
     target_extraction.main(expt_dir, config, barcode)
+
+
+@cli.command(short_help="Build BMRC pipeline submission.")
+@common_options
+def bmrc(expt_dir, config, barcode):
+    """
+    Build necessary submission scripts to run pipeline
+    on the BMRC cluster
+    
+    """
+    from nomadic.pipeline import submit_bmrc
+    submit_bmrc.main(expt_dir, config, barcode)
 
 
 if __name__ == "__main__":
