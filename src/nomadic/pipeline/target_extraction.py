@@ -5,7 +5,7 @@ import pandas as pd
 from dataclasses import dataclass
 
 from nomadic.lib.generic import print_header, print_footer, produce_dir
-from nomadic.lib.parsing import barcode_input_parser
+from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 from nomadic.lib.process_bams import samtools_view, samtools_index, bedtools_intersect, summarise_bam_stats
 
@@ -112,12 +112,12 @@ def write_bed_from_targets(targets, bed_path):
             bed.write(f"{target.chrom}\t{target.start}\t{target.end}\t{target.name}\n")
 
             
-def main():
+def main(expt_dir, config, barcode):
     # PARSE INPUTS
     script_descrip = "NOMADIC: Extract reads overlapping target regions"
     script_dir = "target-extraction"
     t0 = print_header(script_descrip)
-    params = barcode_input_parser(sys.argv, descrip=script_descrip)
+    params = build_parameter_dict(expt_dir, config, barcode)
 
     # Focus on a single barcode, if specified
     if "focus_barcode" in params:
@@ -209,6 +209,7 @@ def main():
         print("")
     print("Done.")
     print("")
+    print_footer(t0)
     
     
 if __name__ == "__main__":
