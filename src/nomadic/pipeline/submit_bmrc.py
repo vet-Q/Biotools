@@ -1,12 +1,16 @@
 import os
-import sys
+import re
 import uuid
+import configparser
 from dataclasses import dataclass
-from nomadic.lib.parsing import basic_input_parser
+from nomadic.lib.parsing import build_parameter_dict
+from nomadic.lib.generic import print_header, print_footer
 
 
 SUBMISSION_ID = str(uuid.uuid4())[:5]
 BMRC_TEMPLATE = "bmrcs/template/bmrc_universal-template.sh"
+SCRIPT_PATH = "configs/bmrc_scripts.ini"
+PIPELINE_PATH = "configs/bmrc_pipeline.ini"
 
 
 class BmrcScriptBuilder:
@@ -60,7 +64,7 @@ class BmrcScriptBuilder:
                 log=self.log_name,
                 extra_qsub_args=extra_qsub_args,
                 script=self.script,
-                script_args=" ".join([f"{k} {v}" for k, v in kwargs.items()]),
+                script_args=kwargs, # " ".join([f"{k} {v}" for k, v in kwargs.items()]),
                 extra_script_args=extra_script_args,
             )
 
@@ -88,6 +92,39 @@ class BmrcScriptBuilder:
         return statement
 
 
+# ================================================================================
+# Define BMRC Script Factories for various scripts in NOMADIC pipeline
+#
+# ================================================================================
+
+
+def create_bmrc_script_dict(script_path):
+    """ Create a dictionary of BMRC scripts """
+    
+    # Create ConfigParser objects
+    config = configparser.ConfigParser()
+    config.read(script_path)
+    
+    # Iterate over scripts, create BMRC script objects
+    scripts = {}
+    for section in config.sections():
+        scripts[section] = BmrcScriptBuilder(
+            script=config.get(section, "script"),
+            job_name=config.get(section, "job_name"),
+            queue=config.get(section, "queue", fallback="short.qc")
+        )
+        
+    return scripts
+
+
+
+
+# ================================================================================
+# Define the BMRC Pipeline as a collection of (optionally) dependent scripts
+#
+# ================================================================================
+
+
 @dataclass
 class Script:
     builder: BmrcScriptBuilder
@@ -97,68 +134,76 @@ class Script:
     array_dependency: bool = False
 
 
-# Define types of BMRC Scripts
-Basecalling = BmrcScriptBuilder(
-    script="./scripts/run_guppy-basecall.sh", job_name="basecall", queue="short.qg"
-)
-Barcoding = BmrcScriptBuilder(
-    script="./scripts/run_guppy-barcode.sh", job_name="barcode", queue="short.qg"
-)
-Mapping = BmrcScriptBuilder(script="python run_mapping-update.py", job_name="map")
-Remapping = BmrcScriptBuilder(script="python run_mapping-hs.py", job_name="remap")
-QCBams = BmrcScriptBuilder(script="python run_qc-bam-update.py", job_name="qcbam")
+def format_arguments(argument_template, params):
+    """ Format an argument string based on the parameter dictionary """
+    
+    # Define an argument mapping
+    # - Probably should either not exist, or exist elsewhere
+    argument_map = {
+        "-e": params["expt_dir"],
+        "-c": params["config"],
+        "-m": "hac",
+        "-k": "native"
+    }
+    
+    flags = re.findall("-[a-z]", argument_template)
+    values = [argument_map[flag] for flag in flags]
+    
+    return argument_template.format(*values)
 
 
-def main():
+def create_bmrc_pipeline(pipeline_path, params, scripts):
+    """ Create a BMRC submission pipeline """
+    
+    
+    # Prepare ConfigParser instance
+    config = configparser.ConfigParser()
+    config.read(pipeline_path)
+    
+    # Create pipeline list
+    pipeline = []
+    for section in config.sections():
+        pipeline_script = Script(
+            scripts[section],
+            args=format_arguments(config.get(section, "arguments"), params),
+            array_job=config.getboolean(section, "array_job", fallback=None),
+            dependency=scripts[config.get(section, "dependency")] if config.has_option(section, "dependency") else None,
+            array_dependency=config.getboolean(section, "array_dependency", fallback=None)
+        )
+        pipeline.append(pipeline_script)
+        
+    return pipeline
+
+
+# ================================================================================
+# Main
+#
+# ================================================================================
+
+
+def main(expt_dir, config, barcode):  # barcode we don't need
     # PARSE INPUTS
     script_descrip = "NOMADIC: Prepare BMRC Pipeline Submission"
-    params = basic_input_parser(sys.argv, descrip=script_descrip)
+    t0 = print_header(script_descrip)
+    params = build_parameter_dict(expt_dir, config, barcode)
+
+    # PREPARE PIPELINE
+    scripts = create_bmrc_script_dict(SCRIPT_PATH)
+    pipeline = create_bmrc_pipeline(
+        pipeline_path=PIPELINE_PATH,
+        params=params,
+        scripts=scripts
+    )
 
     # Get start and end barcode, for array jobs
     start_barcode = int(min(params["barcodes"])[-2:])
     end_barcode = int(max(params["barcodes"])[-2:])
 
-    # Define arguments
-    basic_args = {
-        "-e": params["expt_dir"],
-        "-c": params["config"],
-    }
-    basecall_args = {
-        "-e": params["expt_dir"],
-        "-m": "hac",
-    }
-    barcode_args = {
-        "-e": params["expt_dir"],
-        "-m": "hac",
-        "-k": "native",
-    }
-
-    # Scripts to run
-    scripts = [
-        Script(Basecalling, basecall_args),
-        Script(Barcoding, barcode_args, dependency=Basecalling),
-        Script(Mapping, basic_args, array_job=True, dependency=Barcoding),
-        Script(
-            Remapping,
-            basic_args,
-            array_job=True,
-            dependency=Mapping,
-            array_dependency=True,
-        ),
-        Script(
-            QCBams,
-            basic_args,
-            array_job=True,
-            dependency=Remapping,
-            array_dependency=True,
-        ),
-    ]
-
     # CREATE SUBMISSION FILE
     submission_fn = f"submit_pipeline-{SUBMISSION_ID}.sh"
     with open(submission_fn, "w") as fn:
 
-        for script in scripts:
+        for script in pipeline:
 
             # Create the BMRC script
             script.builder.create_bmrc_script(
@@ -175,7 +220,7 @@ def main():
             fn.write(qsub_statement)
     os.chmod(submission_fn, 0o777)
     print(f"Submission file written to: {submission_fn}")
-
+    print_footer(t0)
 
 if __name__ == "__main__":
     main()
