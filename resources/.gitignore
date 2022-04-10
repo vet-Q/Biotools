@@ -1,0 +1,5 @@
+# Directory holds .fasta and .gff files
+# for different reference genomes
+# Can be downloaded by running `references.py`
+*
+!.gitignore
