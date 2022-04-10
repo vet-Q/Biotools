@@ -7,6 +7,12 @@ __pycache__
 *.egg-info
 *.egg
 
+# Juypter notebook related
+.ipynb_checkpoints
+
 # BMRC submissions
 bmrcs/bmrc_*.sh
 submit_pipeline-*.sh
+
+# All my development scripts start with `dev`
+dev*
