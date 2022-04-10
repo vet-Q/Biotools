@@ -1,5 +1,5 @@
-import sys
 import subprocess
+
 from nomadic.lib.generic import print_header, print_footer
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_bams import samtools_index
@@ -7,6 +7,12 @@ from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
     HomoSapiens,
 )
+
+
+# ================================================================
+# Run Minimap2, but only on unmapped reads from a .bam
+#
+# ================================================================
 
 
 def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
@@ -23,7 +29,19 @@ def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
     return None
 
 
+# ================================================================
+# Main script, run from `cli.py`
+#
+# ================================================================
+
+
 def main(expt_dir, config, barcode):
+    """
+    Remap all reads that failed to map to P.f. referece genome
+    to human referece genome
+
+    """
+
     # PARSE INPUTS
     script_descrip = "NOMADIC: Re-map unmapped reads to Homo Sapiens"
     t0 = print_header(script_descrip)
@@ -59,7 +77,3 @@ def main(expt_dir, config, barcode):
         print("Done.")
         print("")
     print_footer(t0)
-
-
-if __name__ == "__main__":
-    main()

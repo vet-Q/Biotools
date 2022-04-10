@@ -1,5 +1,5 @@
 import os
-import sys
+
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_bams import samtools_index
@@ -7,11 +7,17 @@ from nomadic.lib.mapping import Mapper
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 
 
+# ================================================================
+# Main script, run from `cli.py`
+#
+# ================================================================
+
+
 def main(expt_dir, config, barcode):
     """
     Map .fastq files found in the experiment directory `expt_dir` to the
     P. falciparum reference genome.
-    
+
     """
 
     # PARSE INPUTS
@@ -43,7 +49,6 @@ def main(expt_dir, config, barcode):
         if n_fastqs == 0:
             continue
 
-        results = []
         for reference in references:
             print(f"SPECIES: {reference.name}")
 
@@ -65,9 +70,3 @@ def main(expt_dir, config, barcode):
             print("")
         print("")
     print_footer(t0)
-
-    
-if __name__ == "__main__":
-
-    # Then I probably just add the decorator? Or...?
-    main()

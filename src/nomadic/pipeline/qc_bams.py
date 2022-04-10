@@ -1,32 +1,22 @@
-"""
-NOMADIC: Run a quality control analysis on bam files
-J.Hendry, 2021/11/27
-
-"""
-
-
-import sys
 import pysam
 import pandas as pd
 import numpy as np
 from dataclasses import dataclass
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
     HomoSapiens,
 )
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
-@dataclass
-class ReadInfo:
-    mapq: int
-    flag: int
-    query_length: int
-    mean_qscore: float
-    per_gc: float
+# ================================================================
+# Extract aligment (/read) information from a .bam file
+#
+# ================================================================
 
 
 def calc_percent_gc(seq):
@@ -37,12 +27,23 @@ def calc_percent_gc(seq):
 
     N = len(seq)
     n_gc = len([nt for nt in seq if nt in ["G", "C"]])
+
     return 100 * n_gc / N
 
 
 def extract_read_information(input_bam):
     """Extract a dataframe containing information about reads"""
 
+    # Define a small class to hold information about reads from .bam
+    @dataclass
+    class ReadInfo:
+        mapq: int
+        flag: int
+        query_length: int
+        mean_qscore: float
+        per_gc: float
+
+    # Iterate over reads in .bam, store results
     results = []
     with pysam.AlignmentFile(input_bam, "r") as bam:
         for alignment in bam:
@@ -63,30 +64,63 @@ def extract_read_information(input_bam):
     return pd.DataFrame(results)
 
 
+# ================================================================
+# Read grouping
+#
+# ================================================================
+
+
 class ReadGrouping:
     def __init__(self, df, queries):
+        """
+        Create a set of groupings for a dataframe `df` based on
+        a set of query strings in `queries`
+
+        Each query is applied as `df.query(query)`, see
+        `._create_groupings()`
+
+        The result is to split the input dataframe, `df`,
+        into a set of dictionaries `dfs`, where the key
+        is the name of the query, and the value is the
+        dataframe resulting from that query.
+
+        """
         self.queries = queries
         self.n_grps = len(self.queries)
         self.df = df
         self.dfs = self._create_groupings()
 
-        
     def _create_groupings(self):
-        dfs = {
-            l: self.df.query(q)
-            for l, q in self.queries.items()
-        }
+        """
+        Apply a set of `queries` to a dataframe `df`,
+        returning a dictionary of queries
+
+        """
+        dfs = {l: self.df.query(q) for l, q in self.queries.items()}
+
         return dfs
-    
+
     def get_group_sizes(self):
+        """
+        Get the sizes of the groups, returned as a dataframe
+
+        """
         return pd.DataFrame(
             [(l, df.shape[0]) for l, df in self.dfs.items()],
-            columns=["read_group", "n_reads"]
+            columns=["read_group", "n_reads"],
         )
+
+
+# ================================================================
+# Plotting
+#
+# ================================================================
 
 
 @dataclass
 class HistogramStatistic:
+    """Information necessary to plot a histogram of a given statistic"""
+
     stat: str
     name: str
     min_val: int
@@ -167,19 +201,16 @@ class ReadGroupingHistogram:
         return None
 
     def calc_statistic_bin_counts(self):
-        """ Calculate histogram bin counts for a given statistic """
+        """Calculate histogram bin counts for a given statistic"""
 
         assert self.stat, "`.set_plot_statistic()` must be run first."
 
-        dt = {
-            "stat": [self.stat]*len(self.bins[1:]),
-            "bins": self.bins[1:]
-        }
+        dt = {"stat": [self.stat] * len(self.bins[1:]), "bins": self.bins[1:]}
         for l, df in self.grouping.dfs.items():
             counts, _ = np.histogram(df[self.stat], bins=self.bins)
             dt[l] = counts
 
-        return pd.DataFrame(dt) 
+        return pd.DataFrame(dt)
 
     def plot(self, title=None, annot_med=False, output_path=None):
         """Plot histogram of target statistics over read groupings"""
@@ -237,7 +268,19 @@ class ReadGroupingHistogram:
             plt.close(fig)
 
 
+# ================================================================
+# Main script, run from `cli.py`
+#
+# ================================================================
+
+
 def main(expt_dir, config, barcode):
+    """
+    Create a series of histogram summaries of reads
+    within .bam files
+
+    """
+
     # PARSE INPUTS
     script_descrip = "NOMADIC: Quality control analysis of .bam files"
     t0 = print_header(script_descrip)
@@ -311,7 +354,7 @@ def main(expt_dir, config, barcode):
             grouping = ReadGrouping(read_df, query_groups)
             group_df = grouping.get_group_sizes()
             group_df.to_csv(f"{output_dir}/table.sizes.{query_name}.csv", index=False)
-            
+
             # Instantiate a histogram plotter for the group
             plotter = ReadGroupingHistogram(grouping)
 
@@ -325,12 +368,11 @@ def main(expt_dir, config, barcode):
                     output_path=f"{output_dir}/plot.{s.stat}.{query_name}.png",
                 )
                 hist_df = plotter.calc_statistic_bin_counts()
-                hist_df.to_csv(f"{output_dir}/table.bin_counts.{s.stat}.{query_name}.csv", index=False)
+                hist_df.to_csv(
+                    f"{output_dir}/table.bin_counts.{s.stat}.{query_name}.csv",
+                    index=False,
+                )
         print("Done.")
         print("")
 
     print_footer(t0)
-
-
-if __name__ == "__main__":
-    main()

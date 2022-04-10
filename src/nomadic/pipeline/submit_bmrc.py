@@ -3,6 +3,7 @@ import re
 import uuid
 import configparser
 from dataclasses import dataclass
+
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import print_header, print_footer
 
@@ -13,18 +14,39 @@ SCRIPT_PATH = "configs/bmrc_scripts.ini"
 PIPELINE_PATH = "configs/bmrc_pipeline.ini"
 
 
+# ================================================================================
+# Create BMRC shell scripts and qsub statements for a given script
+#
+# ================================================================================
+
+
 class BmrcScriptBuilder:
 
     submission_id = SUBMISSION_ID
     bmrc_template = BMRC_TEMPLATE
 
     def __init__(self, script, job_name, queue="short.qc"):
+        """
+        Class to create BMRC shell scripts and qsub statements for
+        a given input `script`
+
+        params
+            script: str
+                How the script is called from the command line,
+                e.g. `python run_mapping.py` or `nomadic map`, &c.
+            job_name: str
+                Job name for the script on BMRC computer cluster.
+            queue: str
+                Queue to submit job to on BMRC. By default sent
+                to short queue.
+
+        """
+
         self.script = script
         self.job_name = f"{job_name}-{self.submission_id}"
         self.log_name = job_name
         self.queue = queue
         self._create_log_directories()
-
         self.bmrc_output_path = None
 
     def _create_log_directories(self, log_dir="logs"):
@@ -39,7 +61,7 @@ class BmrcScriptBuilder:
     def create_bmrc_script(
         self, kwargs, start_barcode=None, end_barcode=None, output_dir="bmrcs"
     ):
-        """Generate a BMRC submission script"""
+        """Generate a shell script for submission to BMRC"""
 
         extra_qsub_args = ""
         extra_script_args = ""
@@ -64,7 +86,7 @@ class BmrcScriptBuilder:
                 log=self.log_name,
                 extra_qsub_args=extra_qsub_args,
                 script=self.script,
-                script_args=kwargs, # " ".join([f"{k} {v}" for k, v in kwargs.items()]),
+                script_args=kwargs,  # " ".join([f"{k} {v}" for k, v in kwargs.items()]),
                 extra_script_args=extra_script_args,
             )
 
@@ -77,7 +99,10 @@ class BmrcScriptBuilder:
         print(f"Submission script written to: {self.bmrc_output_path}")
 
     def get_qsub_statement(self, hold_for=None, array_hold=False):
-        """Get a qsub statement for the script"""
+        """
+        Return a `qsub` statement for submission to BMRC
+
+        """
 
         # Construct optional string indicating job dependency
         if hold_for:
@@ -99,24 +124,22 @@ class BmrcScriptBuilder:
 
 
 def create_bmrc_script_dict(script_path):
-    """ Create a dictionary of BMRC scripts """
-    
+    """Create a dictionary of BMRC scripts"""
+
     # Create ConfigParser objects
     config = configparser.ConfigParser()
     config.read(script_path)
-    
+
     # Iterate over scripts, create BMRC script objects
     scripts = {}
     for section in config.sections():
         scripts[section] = BmrcScriptBuilder(
             script=config.get(section, "script"),
             job_name=config.get(section, "job_name"),
-            queue=config.get(section, "queue", fallback="short.qc")
+            queue=config.get(section, "queue", fallback="short.qc"),
         )
-        
+
     return scripts
-
-
 
 
 # ================================================================================
@@ -135,31 +158,30 @@ class Script:
 
 
 def format_arguments(argument_template, params):
-    """ Format an argument string based on the parameter dictionary """
-    
+    """Format an argument string based on the parameter dictionary"""
+
     # Define an argument mapping
     # - Probably should either not exist, or exist elsewhere
     argument_map = {
         "-e": params["expt_dir"],
         "-c": params["config"],
         "-m": "hac",
-        "-k": "native"
+        "-k": "native",
     }
-    
+
     flags = re.findall("-[a-z]", argument_template)
     values = [argument_map[flag] for flag in flags]
-    
+
     return argument_template.format(*values)
 
 
 def create_bmrc_pipeline(pipeline_path, params, scripts):
-    """ Create a BMRC submission pipeline """
-    
-    
+    """Create a BMRC submission pipeline"""
+
     # Prepare ConfigParser instance
     config = configparser.ConfigParser()
     config.read(pipeline_path)
-    
+
     # Create pipeline list
     pipeline = []
     for section in config.sections():
@@ -167,16 +189,20 @@ def create_bmrc_pipeline(pipeline_path, params, scripts):
             scripts[section],
             args=format_arguments(config.get(section, "arguments"), params),
             array_job=config.getboolean(section, "array_job", fallback=None),
-            dependency=scripts[config.get(section, "dependency")] if config.has_option(section, "dependency") else None,
-            array_dependency=config.getboolean(section, "array_dependency", fallback=None)
+            dependency=scripts[config.get(section, "dependency")]
+            if config.has_option(section, "dependency")
+            else None,
+            array_dependency=config.getboolean(
+                section, "array_dependency", fallback=None
+            ),
         )
         pipeline.append(pipeline_script)
-        
+
     return pipeline
 
 
 # ================================================================================
-# Main
+# Main script, run from `cli.py`
 #
 # ================================================================================
 
@@ -190,9 +216,7 @@ def main(expt_dir, config, barcode):  # barcode we don't need
     # PREPARE PIPELINE
     scripts = create_bmrc_script_dict(SCRIPT_PATH)
     pipeline = create_bmrc_pipeline(
-        pipeline_path=PIPELINE_PATH,
-        params=params,
-        scripts=scripts
+        pipeline_path=PIPELINE_PATH, params=params, scripts=scripts
     )
 
     # Get start and end barcode, for array jobs
@@ -221,6 +245,3 @@ def main(expt_dir, config, barcode):  # barcode we don't need
     os.chmod(submission_fn, 0o777)
     print(f"Submission file written to: {submission_fn}")
     print_footer(t0)
-
-if __name__ == "__main__":
-    main()

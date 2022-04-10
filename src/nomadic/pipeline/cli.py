@@ -1,24 +1,41 @@
-from cmath import exp
 import click
+
+
+# ================================================================
+# Decorators for commonly used options
+#
+# ================================================================
 
 
 def common_options(fn):
     fn = click.option(
-        "-b", "--barcode",
+        "-b",
+        "--barcode",
         type=int,
-        help="Optionally run command for only a single barcode.")(fn)
-    fn = click.option(    
-        "-c", "--config", 
-        type=str, 
-        default="configs/default.ini", 
-        help="Path to NOMADIC configuration (.ini) file.")(fn)
+        help="Optionally run command for only a single barcode.",
+    )(fn)
     fn = click.option(
-        "-e", "--expt_dir", 
-        type=str, 
-        required=True, 
-        help="Path to experiment directory.")(fn)
+        "-c",
+        "--config",
+        type=str,
+        default="configs/default.ini",
+        help="Path to NOMADIC configuration (.ini) file.",
+    )(fn)
+    fn = click.option(
+        "-e",
+        "--expt_dir",
+        type=str,
+        required=True,
+        help="Path to experiment directory.",
+    )(fn)
     return fn
-    
+
+
+# ================================================================
+# Entry point for all commands
+#
+# ================================================================
+
 
 # I think this is where I set logging verbosity
 # Then we want that verbosity level to pass to the sub-modules, probably
@@ -26,37 +43,43 @@ def common_options(fn):
 def cli():
     """
     NOMADIC: A pipeline for analysis of malaria long-read data
-    
+
     """
     pass
+
+
+# ================================================================
+# Individual commands
+#
+# ================================================================
+
 
 @cli.command(short_help="Run complete pipeline.")
 @common_options
 def runall(expt_dir, config, barcode):
     """
     Run the complete NOMADIC pipeline
-    
+
     """
-    from nomadic.pipeline import (
-        map_pf, 
-        remap_to_hs,
-        qc_bams,
-        target_extraction
-    )
+    from nomadic.pipeline import map_pf, remap_to_hs, qc_bams, target_extraction
+
     map_pf.main(expt_dir, config, barcode)
     remap_to_hs.main(expt_dir, config, barcode)
     qc_bams.main(expt_dir, config, barcode)
     target_extraction(expt_dir, config, barcode)
+
 
 @cli.command(short_help="Map to P.f. reference.")
 @common_options
 def map(expt_dir, config, barcode):
     """
     Map .fastq files to the P. falciparum reference genome
-    
+
     """
     from nomadic.pipeline import map_pf
+
     map_pf.main(expt_dir, config, barcode)
+
 
 @cli.command(short_help="Map unmapped reads to H.s.")
 @common_options
@@ -67,10 +90,12 @@ def remap(expt_dir, config, barcode):
 
     `nomadic remap` tries to map these reads to the H.s. reference
     genome
-    
+
     """
     from nomadic.pipeline import remap_to_hs
+
     remap_to_hs.main(expt_dir, config, barcode)
+
 
 @cli.command(short_help="QC analysis of .bam files.")
 @common_options
@@ -78,9 +103,10 @@ def qcbams(expt_dir, config, barcode):
     """
     Run a quality control analysis of .bam files generated from
     `nomadic map` and `nomadic remap`
-    
+
     """
     from nomadic.pipeline import qc_bams
+
     qc_bams.main(expt_dir, config, barcode)
 
 
@@ -93,9 +119,10 @@ def targets(expt_dir, config, barcode):
     TODO:
     - Probably want an additional argument here specifying targets
     - Would add flexibility
-    
+
     """
     from nomadic.pipeline import target_extraction
+
     target_extraction.main(expt_dir, config, barcode)
 
 
@@ -105,9 +132,10 @@ def bmrc(expt_dir, config, barcode):
     """
     Build necessary submission scripts to run pipeline
     on the BMRC cluster
-    
+
     """
     from nomadic.pipeline import submit_bmrc
+
     submit_bmrc.main(expt_dir, config, barcode)
 
 
