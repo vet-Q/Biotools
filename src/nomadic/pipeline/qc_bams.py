@@ -20,7 +20,7 @@ from nomadic.lib.references import (
 
 
 def calc_percent_gc(seq):
-    """Calculate GC percentage of a sequece"""
+    """Calculate GC percentage of a sequence"""
 
     if not seq:
         return None
