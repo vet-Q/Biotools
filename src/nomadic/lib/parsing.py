@@ -87,10 +87,6 @@ def add_config(args):
     else:
         args.mutation_dt = {}
 
-    # [Files]
-    args.gff_path = config.get("Files", "gff")
-    args.fasta_path = config.get("Files", "fasta")
-
     return args
 
 
