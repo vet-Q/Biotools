@@ -66,7 +66,7 @@ def runall(expt_dir, config, barcode):
     map_pf.main(expt_dir, config, barcode)
     remap_to_hs.main(expt_dir, config, barcode)
     qc_bams.main(expt_dir, config, barcode)
-    target_extraction(expt_dir, config, barcode)
+    target_extraction.main(expt_dir, config, barcode)
 
 
 @cli.command(short_help="Map to P.f. reference.")
