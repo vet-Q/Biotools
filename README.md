@@ -4,7 +4,7 @@
 
 NOMADIC is a collection of python scripts for analysing long read data generated from Plasmodium falciparum malaria. The scripts are assembled into a pipeline that can be run locally or on an Oracle Grid Engine cluster. At present, the focus is nanopore data generated for a panel of target amplicons.
 
-### Install
+## Install
 First, we build a virtual environment included all dependencies using `conda`:
 
 ```
@@ -19,7 +19,7 @@ Next, we locally install the python package `nomadic2` into this virtual environ
 pip install -e .
 ```
 
-### Run
+## Run
 First, output data from `minknow` and a metadata file must be arranged into the `experiments` directory. See `experiments/0000-00-00_example` for an example. Then, the full pipeline can be run by invoking:
 
 ```
