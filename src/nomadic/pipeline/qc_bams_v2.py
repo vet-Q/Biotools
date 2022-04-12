@@ -191,22 +191,6 @@ def reduce_to_read_dataframe(alignments_df):
         ],
      )
 
-#     # Sort levels
-#     # NB: For now I am dropping both chimera and supplementary, too hard to view
-#     primary_levels = ["pf_mapped", "hs_mapped", "unmapped"][::-1]
-#     read_df.loc[:, "primary_state"] = pd.Categorical(
-#         values=read_df["primary_state"], categories=primary_levels, ordered=True
-#     )
-
-#     secondary_levels = ["unmapped"] + [
-#         f"{s}_{m}"
-#         for s in ["pf", "hs"]
-#         for m in ["uniq_mapped", "chim_mapped", "supp_mapped"]
-#     ][::-1]
-#     read_df.loc[:, "secondary_state"] = pd.Categorical(
-#         values=read_df["secondary_state"], categories=secondary_levels, ordered=True
-#     )
-
     return read_df
 
     
