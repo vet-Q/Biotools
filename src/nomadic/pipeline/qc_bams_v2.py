@@ -362,11 +362,9 @@ class ReadHistogramPlotter:
 
         hist_df = pd.DataFrame(self.hist_info[0].transpose())
         hist_df.columns = [n for n, _ in self.grps]
-        hist_df.index = [
-            f"({low}-{high}]"
-            for low, high in zip(self.hist_info[1][:-1], self.hist_info[1][1:])
-        ]
-
+        hist_df.insert(0, "bin_lower", self.hist_info[1][:-1])
+        hist_df.insert(1, "bin_higher", self.hist_info[1][1:])
+        
         return hist_df
 
     def plot_histogram(self, title=None, output_path=None):
@@ -516,7 +514,7 @@ def main(expt_dir, config, barcode):
                 hist_df = plotter.get_histogram_dataframe()
                 hist_df.to_csv(
                     f"{output_dir}/table.bin_counts.{histogram_stat.stat}.{state}.csv",
-                    index=True,
+                    index=False,
                 )
         print(f"Output directory: {output_dir}")
         print("Done.")
