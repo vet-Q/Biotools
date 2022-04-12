@@ -61,12 +61,21 @@ def runall(expt_dir, config, barcode):
     Run the complete NOMADIC pipeline
 
     """
-    from nomadic.pipeline import map_pf, remap_to_hs, qc_bams, target_extraction
+    from nomadic.pipeline import (
+        map_pf,
+        remap_to_hs,
+        qc_bams,
+        qc_bams_overview,
+        target_extraction,
+        target_extraction_overview,
+    )
 
     map_pf.main(expt_dir, config, barcode)
     remap_to_hs.main(expt_dir, config, barcode)
     qc_bams.main(expt_dir, config, barcode)
+    qc_bams_overview.main(expt_dir, config)
     target_extraction.main(expt_dir, config, barcode)
+    target_extraction_overview.main(expt_dir, config)
 
 
 @cli.command(short_help="Map to P.f. reference.")
@@ -99,7 +108,9 @@ def remap(expt_dir, config, barcode):
 
 @cli.command(short_help="QC analysis of .bam files.")
 @common_options
-@click.option("--overview", is_flag=True, help="Produce an overview across all barcodes.")
+@click.option(
+    "--overview", is_flag=True, help="Produce an overview across all barcodes."
+)
 def qcbams(expt_dir, config, barcode, overview):
     """
     Run a quality control analysis of .bam files generated from
@@ -108,15 +119,19 @@ def qcbams(expt_dir, config, barcode, overview):
     """
     if overview:
         from nomadic.pipeline import qc_bams_overview
+
         qc_bams_overview.main(expt_dir, config)
     else:
         from nomadic.pipeline import qc_bams
+
         qc_bams.main(expt_dir, config, barcode)
 
 
 @cli.command(short_help="Analyse amplicon targets.")
 @common_options
-@click.option("--overview", is_flag=True, help="Produce an overview across all barcodes.")
+@click.option(
+    "--overview", is_flag=True, help="Produce an overview across all barcodes."
+)
 def targets(expt_dir, config, barcode, overview):
     """
     Run analyses of a specific set of amplicon targets
@@ -128,9 +143,11 @@ def targets(expt_dir, config, barcode, overview):
     """
     if overview:
         from nomadic.pipeline import target_extraction_overview
+
         target_extraction_overview.main(expt_dir, config)
     else:
         from nomadic.pipeline import target_extraction
+
         target_extraction.main(expt_dir, config, barcode)
 
 
