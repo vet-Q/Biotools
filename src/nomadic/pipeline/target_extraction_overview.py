@@ -150,7 +150,7 @@ def main(expt_dir, config):
     for overlap_type in overlap_types:
         # Pivot
         pivot_df = merged_df.query("overlap == @overlap_type").pivot(
-            index="name", columns="gene_name", values="reads_mapped"
+            index="sample_id", columns="gene_name", values="reads_mapped"
         )
 
         # Plot

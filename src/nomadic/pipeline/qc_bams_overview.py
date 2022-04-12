@@ -237,7 +237,7 @@ def main(expt_dir, config):
         merged_df.to_csv(f"{output_dir}/table.mapping.{state}.csv")
 
         # Wide for plotting
-        wide_df = merged_df.pivot_table(index="name", columns="group", values="n_reads")
+        wide_df = merged_df.pivot_table(index="sample_id", columns="group", values="n_reads")
         wide_df = wide_df[msc.level_sets[state][::-1]]
 
         # Barplot
