@@ -99,15 +99,20 @@ def remap(expt_dir, config, barcode):
 
 @cli.command(short_help="QC analysis of .bam files.")
 @common_options
-def qcbams(expt_dir, config, barcode):
+@click.option("--overview", is_flag=True, help="Produce an overview across all barcodes.")
+def qcbams(expt_dir, config, barcode, overview):
     """
     Run a quality control analysis of .bam files generated from
     `nomadic map` and `nomadic remap`
 
     """
-    from nomadic.pipeline import qc_bams_v2
+    if not overview:
+        from nomadic.pipeline import qc_bams_v2
+        qc_bams_v2.main(expt_dir, config, barcode)
 
-    qc_bams_v2.main(expt_dir, config, barcode)
+    else:
+        from nomadic.pipeline import qc_bams_overview
+        qc_bams_overview.main(expt_dir, config)
 
 
 @cli.command(short_help="Analyse amplicon targets.")
