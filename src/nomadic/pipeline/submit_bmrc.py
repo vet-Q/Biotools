@@ -9,9 +9,10 @@ from nomadic.lib.generic import print_header, print_footer
 
 
 SUBMISSION_ID = str(uuid.uuid4())[:5]
-BMRC_TEMPLATE = "bmrcs/template/bmrc_universal-template.sh"
-SCRIPT_PATH = "configs/bmrc_scripts.ini"
-PIPELINE_PATH = "configs/bmrc_pipeline.ini"
+OUTPUT_DIR = "bmrc"
+BMRC_TEMPLATE = f"{OUTPUT_DIR}/configs/bmrc_universal-template.sh"
+SCRIPT_PATH = f"{OUTPUT_DIR}/configs/bmrc_scripts.ini"
+PIPELINE_PATH = f"{OUTPUT_DIR}/configs/bmrc_pipeline.ini"
 
 
 # ================================================================================
@@ -59,7 +60,7 @@ class BmrcScriptBuilder:
                 os.makedirs(stream_dir)
 
     def create_bmrc_script(
-        self, kwargs, start_barcode=None, end_barcode=None, output_dir="bmrcs"
+        self, kwargs, start_barcode=None, end_barcode=None, output_dir=OUTPUT_DIR
     ):
         """Generate a shell script for submission to BMRC"""
 
