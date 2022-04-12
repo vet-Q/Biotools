@@ -429,6 +429,13 @@ class ReadHistogramPlotter:
             plt.close(fig)
 
 
+
+# ================================================================
+# Main script, run from `cli.py`
+#
+# ================================================================
+
+
 def main(expt_dir, config, barcode):
     """
     Create a series of histogram summaries of reads
