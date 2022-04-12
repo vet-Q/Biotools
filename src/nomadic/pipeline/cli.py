@@ -106,18 +106,18 @@ def qcbams(expt_dir, config, barcode, overview):
     `nomadic map` and `nomadic remap`
 
     """
-    if not overview:
-        from nomadic.pipeline import qc_bams_v2
-        qc_bams_v2.main(expt_dir, config, barcode)
-
-    else:
+    if overview:
         from nomadic.pipeline import qc_bams_overview
         qc_bams_overview.main(expt_dir, config)
+    else:
+        from nomadic.pipeline import qc_bams_v2
+        qc_bams_v2.main(expt_dir, config, barcode)
 
 
 @cli.command(short_help="Analyse amplicon targets.")
 @common_options
-def targets(expt_dir, config, barcode):
+@click.option("--overview", is_flag=True, help="Produce an overview across all barcodes.")
+def targets(expt_dir, config, barcode, overview):
     """
     Run analyses of a specific set of amplicon targets
 
@@ -126,9 +126,12 @@ def targets(expt_dir, config, barcode):
     - Would add flexibility
 
     """
-    from nomadic.pipeline import target_extraction
-
-    target_extraction.main(expt_dir, config, barcode)
+    if overview:
+        from nomadic.pipeline import target_extraction_overview
+        target_extraction_overview.main(expt_dir, config)
+    else:
+        from nomadic.pipeline import target_extraction
+        target_extraction.main(expt_dir, config, barcode)
 
 
 @cli.command(short_help="Build BMRC pipeline submission.")
