@@ -110,8 +110,8 @@ def qcbams(expt_dir, config, barcode, overview):
         from nomadic.pipeline import qc_bams_overview
         qc_bams_overview.main(expt_dir, config)
     else:
-        from nomadic.pipeline import qc_bams_v2
-        qc_bams_v2.main(expt_dir, config, barcode)
+        from nomadic.pipeline import qc_bams
+        qc_bams.main(expt_dir, config, barcode)
 
 
 @cli.command(short_help="Analyse amplicon targets.")

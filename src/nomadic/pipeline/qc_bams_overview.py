@@ -3,7 +3,7 @@ import numpy as np
 from dataclasses import dataclass
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import print_header, print_footer, produce_dir
-from nomadic.pipeline.qc_bams_v2 import MappingStatesAndColors, histogram_stats
+from nomadic.pipeline.qc_bams import MappingStatesAndColors, histogram_stats
 
 import matplotlib.pyplot as plt
 import seaborn as sns
