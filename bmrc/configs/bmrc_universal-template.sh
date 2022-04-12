@@ -7,7 +7,7 @@
 {extra_qsub_args}
 
 echo "**********************************************************************"
-echo "ARRAY JOB SUBMISSION OF {script}"
+echo "BMRC CLUSTER JOB SUBMISSION OF {script}"
 echo "----------------------------------------------------------------------"
 echo "Run on host: "`hostname`
 echo "Operating system: "`uname -s`
