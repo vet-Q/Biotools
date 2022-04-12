@@ -1,4 +1,4 @@
-﻿barcode,name,sample,protocol,multiplex
-barcode01,3D7_native_PFM0601_Rep1,3D7,native,PFM0601
-barcode02,3D7_native_PFM0601_Rep2,3D7,native,PFM0601
-barcode03,3D7_native_PFM0601_Rep3,3D7,native,PFM0601
+﻿barcode,sample_id,parasite_per_ul,location
+barcode01,3D7_10000ppul_rep1,10000,Oxford
+barcode02,3D7_10000ppul_rep2,10000,Oxford
+barcode03,3D7_10000ppul_rep3,10000,Oxford
