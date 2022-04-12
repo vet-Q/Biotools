@@ -86,56 +86,41 @@ def load_alignment_information(input_bam: str) -> pd.DataFrame:
 
 # ================================================================
 # Classify reads based on their alignment state
-#
+# - Should be a cleaner way to do below
+# 
 # ================================================================
 
 
 def get_read_mapping_state(flags):
     """
-    Classify the alignment of a read, based on its flags
-
-    Five possible outputs:
-        - Unmapped (flag == 4)
-        - Uniquely mapped (flag in [0, 16])
-        - Chimera mapped ([2048, 2064] in flag)
-        - Supplementary mapped ([256, 272] in flag)
-        - Chimera-Supp mapped (both of above)
-
+    Classify a read into a given `mapping_state` given the `flags`
+    of all aligned segments associated with that read
+    
     params:
         flags: list of ints
-            List of mapping flags associated with this read.
-
+            List of FLAG fields associated with aligned segments
+            belonging to a single read.
+    
     returns:
-        _: str
-            A mapping state for the read, draw from
-            MapState
-
+        mapping_state: str
+            A single keyword summary of the mapping state of the
+            read given all of its aligned segments.
+    
     """
+    
+    # NB: Chimera arbitrarily dominant, given chimera and supp.
+    rules = {
+        "uniq_mapped": (0 in flags or 16 in flags) and len(flags) == 1,
+        "chim_mapped": (2048 in flags or 2064 in flags) and len(flags) > 1,
+        "supp_mapped": (256 in flags or 272 in flags) and len(flags) > 1,
+        "unmapped": 4 in flags,
+    }
+    
+    for mapping_state, answer in rules.items():
+        if answer:
+            return mapping_state
 
-    # Handle most common cases first, mapped or unmapped
-    if len(flags) == 1:
-        flag = flags[0]
-        if flag in [0, 16]:
-            return "uniq_mapped"
-        elif flag == 4:
-            return "unmapped"
-        else:
-            raise ValueError(f"Flag {flag} invalid.")
-
-    # Handle chimera and supplementary
-    s = []
-    if 2048 in flags or 2064 in flags:
-        s.append("chim_mapped")
-    if 256 in flags or 272 in flags:
-        s.append("supp_mapped")
-    if len(s) == 1:
-        return s[0]
-    elif len(s) > 1:
-        # NB: ENFORCING CHIMERA DOMINANT HERE FOR CLARITY
-        # Arbitary decision
-        return "chim_mapped"
-    else:
-        raise ValueError(f"Flags {flags} invalid.")
+    raise ValueError(f"Flags {flags} do not conform to any mapping state.")
 
 
 def get_read_state_summary(species, mapping_state, detailed=False):
@@ -204,31 +189,103 @@ def reduce_to_read_dataframe(alignments_df):
             get_read_state_summary(s, m, detailed=True)
             for s, m in zip(read_df["species"], read_df["mapping_state"])
         ],
-    )
+     )
 
-    # Sort levels
-    # NB: For now I am dropping both chimera and supplementary, too hard to view
-    primary_levels = ["pf_mapped", "hs_mapped", "unmapped"][::-1]
-    read_df.loc[:, "primary_state"] = pd.Categorical(
-        values=read_df["primary_state"], categories=primary_levels, ordered=True
-    )
+#     # Sort levels
+#     # NB: For now I am dropping both chimera and supplementary, too hard to view
+#     primary_levels = ["pf_mapped", "hs_mapped", "unmapped"][::-1]
+#     read_df.loc[:, "primary_state"] = pd.Categorical(
+#         values=read_df["primary_state"], categories=primary_levels, ordered=True
+#     )
 
-    secondary_levels = ["unmapped"] + [
-        f"{s}_{m}"
-        for s in ["pf", "hs"]
-        for m in ["uniq_mapped", "chim_mapped", "supp_mapped"]
-    ][::-1]
-    read_df.loc[:, "secondary_state"] = pd.Categorical(
-        values=read_df["secondary_state"], categories=secondary_levels, ordered=True
-    )
+#     secondary_levels = ["unmapped"] + [
+#         f"{s}_{m}"
+#         for s in ["pf", "hs"]
+#         for m in ["uniq_mapped", "chim_mapped", "supp_mapped"]
+#     ][::-1]
+#     read_df.loc[:, "secondary_state"] = pd.Categorical(
+#         values=read_df["secondary_state"], categories=secondary_levels, ordered=True
+#     )
 
     return read_df
 
+    
+def convert_column_to_ordered_category(df, column, category_order):
+    """
+    Convert a `column` of a dataframe `df` to an ordered Categorical
+    column, given by the order in `category_order` 
+    
+    """
+    
+    # This will occur inplace
+    df[column] = pd.Categorical(
+        values=df[column],
+        categories=category_order,
+        ordered=True)
+    
+    
+class MappingStatesAndColors:
+    """
+    Class to hold mapping states and their associated colors for
+    plotting
+    
+    This class is strongly coupled to `get_read_mapping_state()`
+    and `get_read_state_summary()`
+    
+    """
+    
+    # Species / states
+    species = ["pf", "hs"]
+    mapping_states = ["uniq_mapped", "chim_mapped", "supp_mapped"]
+    unmapped_state = ["unmapped"]
+    
+    def __init__(self):
+        self._prepare_levels()
+        self._prepare_colors()
+        
+    def _prepare_levels(self):
+        self.primary_levels = self.unmapped_state + [f"{s}_mapped" for s in self.species][::-1]
+        self.secondary_levels =  self.unmapped_state + [f"{s}_{m}"
+                                                        for s in self.species
+                                                        for m in self.mapping_states][::-1]
+        self.level_sets = {
+            "primary_state": self.primary_levels,
+            "secondary_state": self.secondary_levels
+        }
+    
+    def _prepare_colors(self):
+        # Colors
+        self.pf_colors = sns.color_palette("Blues_r", len(self.mapping_states))
+        self.hs_colors = sns.color_palette("Reds_r", len(self.mapping_states))
+        self.unmapped_color = [(0.75, 0.75, 0.75)]
+
+        self.primary_colors = self.unmapped_color + [self.hs_colors[0], self.pf_colors[0]]
+        self.secondary_colors = self.unmapped_color + self.hs_colors[::-1] + self.pf_colors[::-1]
+        self.color_sets = {
+            "primary_state": self.primary_colors,
+            "secondary_state": self.secondary_colors
+        }
+map_states_colors = MappingStatesAndColors()
+        
 
 # ================================================================
 # Plotting functionality
 #
 # ================================================================
+
+
+# Prepare colors
+pf_colors = sns.color_palette("Blues_r", 3)
+hs_colors = sns.color_palette("Reds_r", 3)
+unmapped_color = (0.75, 0.75, 0.75)
+
+primary_colors = [unmapped_color, hs_colors[0], pf_colors[0]]
+secondary_colors = pf_colors + hs_colors + [unmapped_color]
+
+color_sets = {
+    "primary_state": primary_colors,
+    "secondary_state": secondary_colors[::-1],
+}
 
 
 @dataclass
@@ -449,26 +506,19 @@ def main(expt_dir, config, barcode):
         # Produce a read-level data frame
         print("Processing...")
         read_df = reduce_to_read_dataframe(alignments_df)
+        convert_column_to_ordered_category(read_df, 
+                                           "primary_state",
+                                           map_states_colors.primary_levels)
+        convert_column_to_ordered_category(read_df, 
+                                           "secondary_state",
+                                           map_states_colors.secondary_levels)
 
         # Prepare plotter
         plotter = ReadHistogramPlotter(read_df)
 
-        # Prepare colors
-        pf_colors = sns.color_palette("Blues_r", 3)
-        hs_colors = sns.color_palette("Reds_r", 3)
-        unmapped_color = (0.75, 0.75, 0.75)
-
-        primary_colors = [unmapped_color, hs_colors[0], pf_colors[0]]
-        secondary_colors = pf_colors + hs_colors + [unmapped_color]
-
-        color_sets = {
-            "primary_state": primary_colors,
-            "secondary_state": secondary_colors[::-1],
-        }
-
         # Iterate over statistics, states, and plot
         print("Plotting...")
-        for state, colors in color_sets.items():
+        for state, colors in map_states_colors.color_sets.items():
             plotter.set_groups(state, colors)
             size_df = plotter.get_group_size_dataframe()
             size_df.to_csv(f"{output_dir}/table.size.{state}.csv", index=False)
