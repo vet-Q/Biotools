@@ -226,25 +226,28 @@ def main(expt_dir, config):
             csv_filename=f"table.size.{state}.csv", script_dir=script_dir, params=params
         )
 
+        # Tall to wide
+        joint_df = (joint_df
+                    .pivot(index="barcode", columns="group", values="n_reads")
+                    .reset_index()
+                )
+
         # Merge metadata
-        # - Will need a standardised ID for every sample in the metadata for this to work
         merged_df = pd.merge(left=joint_df, right=params["metadata"], on="barcode")
         assert (
             joint_df.shape[0] == merged_df.shape[0]
         ), "Barcodes lost during merge with metadata."
 
         # Write
-        merged_df.to_csv(f"{output_dir}/table.mapping.{state}.csv")
+        merged_df.to_csv(f"{output_dir}/table.mapping.{state}.csv", index=False)
 
-        # Wide for plotting
-        wide_df = merged_df.pivot_table(
-            index="sample_id", columns="group", values="n_reads"
-        )
-        wide_df = wide_df[msc.level_sets[state][::-1]]
+        # Isolate to key columns for plotting
+        plot_df = merged_df[msc.level_sets[state][::-1]]
+        plot_df.index = merged_df["sample_id"]
 
         # Barplot
         barplot_states(
-            wide_df,
+            plot_df,
             colors=msc.color_sets[state][::-1],
             show_per="pf_uniq_mapped" if state == "secondary_state" else "pf_mapped",
             output_path=f"{output_dir}/plot.mapping.{state}.pdf",
