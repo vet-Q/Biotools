@@ -364,7 +364,7 @@ class ReadHistogramPlotter:
         hist_df.columns = [n for n, _ in self.grps]
         hist_df.insert(0, "bin_lower", self.hist_info[1][:-1])
         hist_df.insert(1, "bin_higher", self.hist_info[1][1:])
-        
+
         return hist_df
 
     def plot_histogram(self, title=None, output_path=None):
@@ -427,7 +427,6 @@ class ReadHistogramPlotter:
         if output_path is not None:
             fig.savefig(output_path, bbox_inches="tight", pad_inches=0.5, dpi=300)
             plt.close(fig)
-
 
 
 # ================================================================
