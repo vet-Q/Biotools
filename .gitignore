@@ -19,3 +19,4 @@ submit_pipeline-*.sh
 
 # All my development scripts start with `dev`
 dev*
+./transfer_nomadic.sh # shell script for transfer to Oxford cluster
