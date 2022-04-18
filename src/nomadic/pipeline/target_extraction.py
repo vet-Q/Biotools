@@ -248,6 +248,7 @@ def main(expt_dir, config, barcode):
             print(f"\tFinding any overlapping reads...")
             # Any overlap >=2000bp
             samtools_view(mapped_bam_path, f"{target.region} -m 2000", target_bam_path)
+            samtools_index(target_bam_path)
 
             # Compute summary statistics
             dt = summarise_bam_stats(target_bam_path)
@@ -274,6 +275,7 @@ def main(expt_dir, config, barcode):
                 args="-F 1.0",
                 output=complete_bam_path,
             )
+            samtools_index(complete_bam_path)
 
             # Remove .bed
             os.remove(temp_bed_path)
