@@ -1,4 +1,5 @@
 import click
+from nomadic.pipeline.calling.callers import caller_collection
 
 
 # ================================================================
@@ -149,6 +150,34 @@ def targets(expt_dir, config, barcode, overview):
         from nomadic.pipeline import target_extraction
 
         target_extraction.main(expt_dir, config, barcode)
+
+
+@cli.command(short_help="Call variants across targets.")
+@common_options
+@click.option(
+    "-m",
+    "--method",
+    type=click.Choice(caller_collection),
+    required=True,
+    help="Variant calling method to use.",
+)
+@click.option(
+    "--downsample", is_flag=True, help="Produce an overview across all barcodes."
+)
+def call(expt_dir, config, barcode, method, downsample):
+    """
+    Run analyses of a specific set of amplicon targets
+
+    TODO:
+    - Probably want an additional argument here specifying targets
+    - Would add flexibility
+
+    """
+    from nomadic.pipeline.calling import commands
+    if downsample:
+        pass
+    else:
+        commands.call(expt_dir, config, barcode, method)
 
 
 @cli.command(short_help="Build BMRC pipeline submission.")
