@@ -180,6 +180,25 @@ def call(expt_dir, config, barcode, method, downsample):
         commands.call(expt_dir, config, barcode, method)
 
 
+@cli.command(short_help="Call variants across targets.")
+@common_options
+@click.option(
+    "-m",
+    "--method",
+    type=click.Choice(caller_collection),
+    required=True,
+    help="Variant calling method to use.",
+)
+def find(expt_dir, config, barcode, method):
+    """
+    Find a set of mutations in your amplicon set
+
+
+    """
+    from nomadic.pipeline.find import commands
+    commands.main(expt_dir, config, barcode, method)
+
+
 @cli.command(short_help="Build BMRC pipeline submission.")
 @common_options
 def bmrc(expt_dir, config, barcode):
