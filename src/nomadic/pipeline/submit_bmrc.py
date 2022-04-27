@@ -208,16 +208,16 @@ def create_bmrc_pipeline(pipeline_path, params, scripts):
 # ================================================================================
 
 
-def main(expt_dir, config, barcode):  # barcode we don't need
+def main(expt_dir, config, pipeline_path):  # barcode we don't need
     # PARSE INPUTS
     script_descrip = "NOMADIC: Prepare BMRC Pipeline Submission"
     t0 = print_header(script_descrip)
-    params = build_parameter_dict(expt_dir, config, barcode)
+    params = build_parameter_dict(expt_dir, config, barcode=None)
 
     # PREPARE PIPELINE
     scripts = create_bmrc_script_dict(SCRIPT_PATH)
     pipeline = create_bmrc_pipeline(
-        pipeline_path=PIPELINE_PATH, params=params, scripts=scripts
+        pipeline_path=pipeline_path, params=params, scripts=scripts
     )
 
     # Get start and end barcode, for array jobs
