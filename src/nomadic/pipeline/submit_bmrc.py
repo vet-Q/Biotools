@@ -166,12 +166,12 @@ def format_arguments(argument_template, params):
     argument_map = {
         "-e": params["expt_dir"],
         "-c": params["config"],
-        "-m": "hac",
+        "-m": "hac", # these I probably should put explicit in pipeline
         "-k": "native",
     }
 
-    flags = re.findall("-[a-z]", argument_template)
-    values = [argument_map[flag] for flag in flags]
+    flags = re.findall("-[a-z] {}", argument_template)
+    values = [argument_map[flag[:2]] for flag in flags]
 
     return argument_template.format(*values)
 
