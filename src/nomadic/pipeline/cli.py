@@ -180,7 +180,7 @@ def call(expt_dir, config, barcode, method, downsample):
         commands.call(expt_dir, config, barcode, method)
 
 
-@cli.command(short_help="Call variants across targets.")
+@cli.command(short_help="Find mutations of interest.")
 @common_options
 @click.option(
     "-m",
