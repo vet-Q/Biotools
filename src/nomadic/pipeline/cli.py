@@ -1,5 +1,6 @@
 import click
 from nomadic.pipeline.calling.callers import caller_collection
+from nomadic.pipeline.submit_bmrc import PIPELINE_PATH
 
 
 # ================================================================
@@ -8,13 +9,12 @@ from nomadic.pipeline.calling.callers import caller_collection
 # ================================================================
 
 
-def common_options(fn):
-    fn = click.option(
-        "-b",
-        "--barcode",
-        type=int,
-        help="Optionally run command for only a single barcode.",
-    )(fn)
+def experiment_options(fn):
+    """
+    Wrapper for Click arguments used to specify the experiment,
+    name -e <expt_dir> and -c <config_file>
+    
+    """
     fn = click.option(
         "-c",
         "--config",
@@ -30,6 +30,45 @@ def common_options(fn):
         help="Path to experiment directory.",
     )(fn)
     return fn
+
+
+def barcode_option(fn):
+    """
+    Wrapper for Click argument used to specify a specific
+    barcode 
+    
+    """
+    fn = click.option(
+        "-b",
+        "--barcode",
+        type=int,
+        help="Optionally run command for only a single barcode.",
+    )(fn)
+    return fn
+    
+
+# def common_options(fn):
+#     fn = click.option(
+#         "-b",
+#         "--barcode",
+#         type=int,
+#         help="Optionally run command for only a single barcode.",
+#     )(fn)
+#     fn = click.option(
+#         "-c",
+#         "--config",
+#         type=str,
+#         default="configs/default.ini",
+#         help="Path to NOMADIC configuration (.ini) file.",
+#     )(fn)
+#     fn = click.option(
+#         "-e",
+#         "--expt_dir",
+#         type=str,
+#         required=True,
+#         help="Path to experiment directory.",
+#     )(fn)
+#     return fn
 
 
 # ================================================================
@@ -56,7 +95,8 @@ def cli():
 
 
 @cli.command(short_help="Run complete pipeline.")
-@common_options
+@experiment_options
+@barcode_option
 def runall(expt_dir, config, barcode):
     """
     Run the complete NOMADIC pipeline
@@ -80,7 +120,8 @@ def runall(expt_dir, config, barcode):
 
 
 @cli.command(short_help="Map to P.f. reference.")
-@common_options
+@experiment_options
+@barcode_option
 def map(expt_dir, config, barcode):
     """
     Map .fastq files to the P. falciparum reference genome
@@ -92,7 +133,8 @@ def map(expt_dir, config, barcode):
 
 
 @cli.command(short_help="Map unmapped reads to H.s.")
-@common_options
+@experiment_options
+@barcode_option
 def remap(expt_dir, config, barcode):
     """
     Some reads may fail to map to the P.f. reference genome after
@@ -108,7 +150,8 @@ def remap(expt_dir, config, barcode):
 
 
 @cli.command(short_help="QC analysis of .bam files.")
-@common_options
+@experiment_options
+@barcode_option
 @click.option(
     "--overview", is_flag=True, help="Produce an overview across all barcodes."
 )
@@ -129,7 +172,8 @@ def qcbams(expt_dir, config, barcode, overview):
 
 
 @cli.command(short_help="Analyse amplicon targets.")
-@common_options
+@experiment_options
+@barcode_option
 @click.option(
     "--overview", is_flag=True, help="Produce an overview across all barcodes."
 )
@@ -153,7 +197,8 @@ def targets(expt_dir, config, barcode, overview):
 
 
 @cli.command(short_help="Call variants across targets.")
-@common_options
+@experiment_options
+@barcode_option
 @click.option(
     "-m",
     "--method",
@@ -181,7 +226,8 @@ def call(expt_dir, config, barcode, method, downsample):
 
 
 @cli.command(short_help="Find mutations of interest.")
-@common_options
+@experiment_options
+@barcode_option
 @click.option(
     "-m",
     "--method",
@@ -200,8 +246,13 @@ def find(expt_dir, config, barcode, method):
 
 
 @cli.command(short_help="Build BMRC pipeline submission.")
-@common_options
-def bmrc(expt_dir, config, barcode):
+@experiment_options
+@click.option(
+    "-p", "--pipeline", 
+    type=str,
+    default=PIPELINE_PATH,
+    help="Path to BMRC pipeline (.ini) file.")
+def bmrc(expt_dir, config, pipeline):
     """
     Build necessary submission scripts to run pipeline
     on the BMRC cluster
@@ -209,7 +260,7 @@ def bmrc(expt_dir, config, barcode):
     """
     from nomadic.pipeline import submit_bmrc
 
-    submit_bmrc.main(expt_dir, config, barcode)
+    submit_bmrc.main(expt_dir, config, pipeline)
 
 
 if __name__ == "__main__":
