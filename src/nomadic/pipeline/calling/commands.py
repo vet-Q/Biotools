@@ -14,7 +14,7 @@ def call(expt_dir, config, barcode, method):
     # PARSE INPUTS
     script_descrip = "NOMADIC: Map .fastq files to Plasmodium falciparum"
     t0 = print_header(script_descrip)
-    script_dir = f"call-{method}"
+    script_dir = f"calling/{method}"  # this will be easier to iterate overs
     params = build_parameter_dict(expt_dir, config, barcode)
 
     # Define reference genome
