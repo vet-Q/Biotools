@@ -22,7 +22,7 @@ BARCODING_KIT_MAPPING = {
 # ================================================================
 
 
-def run_guppy_barcode(fastq_input_dir, barcode_kits, output_dir, both_ends):
+def run_guppy_barcode(fastq_input_dir, barcode_kits, output_dir, both_ends, load_module=True):
     """
     Run guppy demultiplexing
 
@@ -41,8 +41,12 @@ def run_guppy_barcode(fastq_input_dir, barcode_kits, output_dir, both_ends):
     
     """
 
+    cmd = ""
+    if load_module:
+        cmd += "module load ont-guppy/5.0.11_linux64 && "
+
     # Construct command
-    cmd = "guppy_barcoder"
+    cmd += "guppy_barcoder"
     cmd += " --device 'cuda:0'"
     cmd += " --compress_fastq"
     cmd += " --trim_barcodes"
@@ -69,8 +73,9 @@ def main(expt_dir, basecalling_method, barcoding_strategy, both_ends):
     Run guppy demultiplexing on .fastq files
 
     """
+    # this won't work, it executes in a temporary environment
     # LOAD GUPPY
-    subprocess.run("module load ont-guppy/5.0.11_linux64", shell=True, check=True)
+    #subprocess.run("module load ont-guppy/5.0.11_linux64", shell=True, check=True)
 
     # SELECT KIT
     barcode_kits = BARCODING_KIT_MAPPING[barcoding_strategy]
