@@ -4,6 +4,9 @@ import uuid
 import configparser
 from dataclasses import dataclass
 
+import click
+from nomadic.pipeline.cli import experiment_options
+
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import print_header, print_footer
 
@@ -203,12 +206,24 @@ def create_bmrc_pipeline(pipeline_path, params, scripts):
 
 
 # ================================================================================
-# Main script, run from `cli.py`
+# Main command
 #
 # ================================================================================
 
 
-def main(expt_dir, config, pipeline_path):  # barcode we don't need
+@click.command(short_help="Build BMRC pipeline submission.")
+@experiment_options
+@click.option(
+    "-p", "--pipeline_path", 
+    type=str,
+    default=PIPELINE_PATH,
+    help="Path to BMRC pipeline (.ini) file.")
+def bmrc(expt_dir, config, pipeline_path):
+    """
+    Build necessary submission scripts to run pipeline
+    on the BMRC cluster
+
+    """
     # PARSE INPUTS
     script_descrip = "NOMADIC: Prepare BMRC Pipeline Submission"
     t0 = print_header(script_descrip)
