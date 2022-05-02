@@ -169,7 +169,7 @@ def format_arguments(argument_template, params):
     argument_map = {
         "-e": params["expt_dir"],
         "-c": params["config"],
-        "-m": "hac", # these I probably should put explicit in pipeline
+        "-m": "hac",  # these I probably should put explicit in pipeline
         "-k": "native",
     }
 
@@ -214,10 +214,12 @@ def create_bmrc_pipeline(pipeline_path, params, scripts):
 @click.command(short_help="Build BMRC pipeline submission.")
 @experiment_options
 @click.option(
-    "-p", "--pipeline_path", 
+    "-p",
+    "--pipeline_path",
     type=str,
     default=PIPELINE_PATH,
-    help="Path to BMRC pipeline (.ini) file.")
+    help="Path to BMRC pipeline (.ini) file.",
+)
 def bmrc(expt_dir, config, pipeline_path):
     """
     Build necessary submission scripts to run pipeline

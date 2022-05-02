@@ -17,7 +17,6 @@ from .mappers import Mapper
 # ================================================================
 
 
-
 @click.command(short_help="Map to P.f. reference.")
 @experiment_options
 @barcode_option

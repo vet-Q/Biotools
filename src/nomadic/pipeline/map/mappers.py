@@ -5,11 +5,12 @@ import subprocess
 # Want to migrate here to using an ABC for mappers
 # This should allow incorporation of `bwa`
 
+
 def run_minimap2(fastqs, ref_fasta, output_bam, flags=""):
     """
     Pipeline to run minimap2, compress results
     to bam file, and sort.
-    
+
     params
         fastqs : list, str, shape (n_fastqs, )
             A list of paths to .fastq files that
@@ -23,15 +24,15 @@ def run_minimap2(fastqs, ref_fasta, output_bam, flags=""):
 
     returns
         None
-        
+
     """
-    
+
     cmd = "minimap2 -ax map-ont %s %s %s | " % (ref_fasta, " ".join(fastqs), flags)
     cmd += "samtools view -S -b - | "
     cmd += "samtools sort -o %s" % output_bam
-    
+
     subprocess.run(cmd, shell=True, check=True)
-    
+
     return None
 
 
@@ -39,16 +40,18 @@ class Mapper:
     """
     Map a set of reads in `.fastq` format to a particular
     reference genome
-    
+
     """
-    
+
     def __init__(self, fastq_dir, reference):
         self.fastq_dir = fastq_dir
-        self.fastqs = [f"{fastq_dir}/{fn}"
-                       for fn in os.listdir(fastq_dir)
-                       if fn.endswith(".fastq") or fn.endswith(".fastq.gz")]
+        self.fastqs = [
+            f"{fastq_dir}/{fn}"
+            for fn in os.listdir(fastq_dir)
+            if fn.endswith(".fastq") or fn.endswith(".fastq.gz")
+        ]
         self.ref = reference
-        
+
     def run_minimap2(self, output_bam, flags="--eqx --MD"):
         """
         Pipeline to run minimap2, compress results
@@ -69,13 +72,13 @@ class Mapper:
             None
 
         """
-        
+
         cmd = "minimap2"
         cmd += f" -ax map-ont {self.ref.fasta_path} {' '.join(self.fastqs)}"
         cmd += f" {flags} |"
         cmd += " samtools view -S -b - |"
         cmd += " samtools sort -o %s" % output_bam
-        
+
         subprocess.run(cmd, shell=True, check=True)
 
         return None

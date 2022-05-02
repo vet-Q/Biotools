@@ -1,4 +1,3 @@
-
 import subprocess
 from abc import ABC, abstractmethod
 
@@ -88,14 +87,10 @@ class BcfTools(VariantCaller):
         return None
 
 
-
 # ================================================================
 # Define collection of available callers
 #
 # ================================================================
 
 # Note, they are already initialised
-caller_collection = {
-    "longshot": LongShot(),
-    "bcftools": BcfTools()
-}
+caller_collection = {"longshot": LongShot(), "bcftools": BcfTools()}

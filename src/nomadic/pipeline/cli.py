@@ -11,7 +11,7 @@ def experiment_options(fn):
     """
     Wrapper for Click arguments used to specify the experiment,
     name -e <expt_dir> and -c <config_file>
-    
+
     """
     fn = click.option(
         "-c",
@@ -33,8 +33,8 @@ def experiment_options(fn):
 def barcode_option(fn):
     """
     Wrapper for Click argument used to specify a specific
-    barcode 
-    
+    barcode
+
     """
     fn = click.option(
         "-b",
@@ -83,6 +83,7 @@ cli.add_command(call)
 cli.add_command(find)
 
 from .bmrc.commands import bmrc
+
 cli.add_command(bmrc)
 
 

@@ -27,7 +27,7 @@ from nomadic.pipeline.qcbams.commands import combine_barcode_dataframes
 def targets(expt_dir, config, barcode, overview):
     """
     Analyse reads overlapping a specific set of targets
-    
+
     """
     if overview:
         target_extraction_overview(expt_dir, config)
@@ -39,7 +39,7 @@ def target_extraction_overview(expt_dir, config):
     """
     Produce plots on the outputs of `target_extraction()`
     across all of the barcodes in an experiment
-    
+
     """
     # PARSE INPUTS
     script_descrip = "NOMADIC: Overview of target extraction."

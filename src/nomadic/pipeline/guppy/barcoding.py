@@ -12,7 +12,7 @@ BARCODING_KIT_MAPPING = {
     "native24": "EXP-NDB104 EXP-NDB114",
     "native96": "EXP-NBD196",
     "rapid": "SQK-RBK004",
-    "pcr": "SQK-PBK004"
+    "pcr": "SQK-PBK004",
 }
 
 
@@ -22,7 +22,9 @@ BARCODING_KIT_MAPPING = {
 # ================================================================
 
 
-def run_guppy_barcode(fastq_input_dir, barcode_kits, output_dir, both_ends, load_module=True):
+def run_guppy_barcode(
+    fastq_input_dir, barcode_kits, output_dir, both_ends, load_module=True
+):
     """
     Run guppy demultiplexing
 
@@ -41,7 +43,7 @@ def run_guppy_barcode(fastq_input_dir, barcode_kits, output_dir, both_ends, load
             is used when run on BMRC cluster.
     returns
         _ : None
-    
+
     """
 
     cmd = ""
@@ -60,6 +62,6 @@ def run_guppy_barcode(fastq_input_dir, barcode_kits, output_dir, both_ends, load
     cmd += " --disable_pings"
     if both_ends:
         cmd += " --require_barcodes_both_ends"
-    
+
     # Run
     subprocess.run(cmd, shell=True, check=True)

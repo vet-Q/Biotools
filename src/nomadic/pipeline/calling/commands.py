@@ -43,9 +43,9 @@ def call(expt_dir, config, barcode, method, downsample):
 
     # ITERATE over barcodes
     for barcode in params["barcodes"]:
-        
+
         # Define input and output directory
-        print("-"*80)
+        print("-" * 80)
         print(f"Running {method} for: {barcode}")
         barcode_dir = f"{params['barcodes_dir']}/{barcode}"
         input_dir = f"{barcode_dir}/target-extraction"
@@ -67,9 +67,7 @@ def call(expt_dir, config, barcode, method, downsample):
                 bam_path=bam_path,
                 vcf_path=vcf_path,
             )
-            caller.set_arguments(
-                fasta_path=reference.fasta_path
-            )
+            caller.set_arguments(fasta_path=reference.fasta_path)
             caller.call_variants()
             print("Done.")
             print("")
@@ -107,9 +105,9 @@ def call_with_downsample(expt_dir, config, barcode):
 
     # ITERATE over barcodes
     for barcode in params["barcodes"]:
-        
+
         # Define input and output directory
-        print("-"*80)
+        print("-" * 80)
         print(f"Running longshot for: {barcode}")
         barcode_dir = f"{params['barcodes_dir']}/{barcode}"
         input_dir = f"{barcode_dir}/target-extraction"
@@ -145,6 +143,3 @@ def call_with_downsample(expt_dir, config, barcode):
                 # Run
 
                 # Remove downsample
-
-
-

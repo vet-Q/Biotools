@@ -37,7 +37,6 @@ def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
 # ================================================================
 
 
-
 @click.command(short_help="Map unmapped reads to H.s.")
 @experiment_options
 @barcode_option

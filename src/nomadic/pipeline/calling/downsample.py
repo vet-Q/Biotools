@@ -58,7 +58,7 @@ class BamDownSampler:
             raise ValueError("Fraction of .bam to sample must be greater than zero.")
 
         # Prepare sub-sample tag, which requires a random seed
-        rint = random.randint(0, 10 ** 9)
+        rint = random.randint(0, 10**9)
         stag = f"{rint}{str(frac)[1:]}"
 
         # Downsample

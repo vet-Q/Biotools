@@ -5,9 +5,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-
-
-
 def plot_dataframe_heat(
     df,
     title=None,

@@ -61,8 +61,6 @@ class MappingStatesAndColors:
         }
 
 
-
-
 # ================================================================
 # Store metadata needed for plotting histograms across different
 # statistics
@@ -108,12 +106,10 @@ qscore = HistogramStatistic(
 HISTOGRAM_STATS = [read_length, gc, qscore]
 
 
-
 # ================================================================
 # Plot histograms
 #
 # ================================================================
-
 
 
 class ReadHistogramPlotter:

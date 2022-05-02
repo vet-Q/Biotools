@@ -8,7 +8,7 @@ from .barcoding import BARCODING_KIT_MAPPING, run_guppy_barcode
 # ================================================================
 
 
-ONLY_PASS = True   # only demultiplex .fastq that pass guppy quality control
+ONLY_PASS = True  # only demultiplex .fastq that pass guppy quality control
 
 
 # ================================================================
@@ -30,32 +30,32 @@ def basecall():
 
 @click.command(short_help="Demultiplex with guppy.")
 @click.option(
-        "-e",
-        "--expt_dir",
-        type=str,
-        required=True,
-        help="Path to experiment directory.",
-    )
+    "-e",
+    "--expt_dir",
+    type=str,
+    required=True,
+    help="Path to experiment directory.",
+)
 @click.option(
     "-m",
     "--basecalling_method",
     type=click.Choice(["hac", "fast"]),
     default="hac",
-    help="Basecalling method, high accuracy or fast."
+    help="Basecalling method, high accuracy or fast.",
 )
 @click.option(
     "-k",
     "--barcoding_strategy",
     type=click.Choice(BARCODING_KIT_MAPPING),
     default="native24",
-    help="Barcoding strategy, human-readable names that map to ONT kits."
+    help="Barcoding strategy, human-readable names that map to ONT kits.",
 )
 @click.option(
-    "-b", 
+    "-b",
     "--both_ends",
     is_flag=True,
     default=False,
-    help="Require both ends to have barcode?"
+    help="Require both ends to have barcode?",
 )
 def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
     """
@@ -70,7 +70,7 @@ def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
     input_dir = f"{expt_dir}/guppy/{basecalling_method}"
     if ONLY_PASS:
         fastq_input_dir = f"{input_dir}/pass"
-    output_dir = produce_dir(input_dir, 'both_ends' if both_ends else 'single_end')
+    output_dir = produce_dir(input_dir, "both_ends" if both_ends else "single_end")
 
     # PRINT TO STDOUT
     print("Inputs")
@@ -93,7 +93,7 @@ def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
         fastq_input_dir=fastq_input_dir,
         barcode_kits=barcode_kits,
         output_dir=output_dir,
-        both_ends=both_ends
+        both_ends=both_ends,
     )
     print("Done.")
     print("")
