@@ -1,7 +1,9 @@
 import click
 from nomadic.pipeline.calling.callers import caller_collection
 from nomadic.pipeline.submit_bmrc import PIPELINE_PATH
-from nomadic.pipeline.guppy_barcode import BARCODING_KIT_MAPPING
+#from nomadic.pipeline.guppy_barcode import BARCODING_KIT_MAPPING
+
+from .guppy.commands import barcode
 
 
 # ================================================================
@@ -89,6 +91,10 @@ def cli():
     pass
 
 
+
+cli.add_command(barcode)
+
+
 # ================================================================
 # Individual commands
 #
@@ -120,38 +126,38 @@ def runall(expt_dir, config, barcode):
     target_extraction_overview.main(expt_dir, config)
 
 
-@cli.command(short_help="Demultiplex with guppy.")
-@click.option(
-        "-e",
-        "--expt_dir",
-        type=str,
-        required=True,
-        help="Path to experiment directory.",
-    )
-@click.option(
-    "-m",
-    "--basecalling_method",
-    type=click.Choice(["hac", "fast"]),
-    default="hac",
-    help="Basecalling method, high accuracy or fast."
-)
-@click.option(
-    "-k",
-    "--barcoding_strategy",
-    type=click.Choice(BARCODING_KIT_MAPPING),
-    default="native24",
-    help="Barcoding strategy, human-readable names that map to ONT kits."
-)
-@click.option(
-    "-b", 
-    "--both_ends",
-    is_flag=True,
-    default=False,
-    help="Require both ends to have barcode?"
-)
-def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
-    from nomadic.pipeline import guppy_barcode
-    guppy_barcode.main(expt_dir, basecalling_method, barcoding_strategy, both_ends)
+# @cli.command(short_help="Demultiplex with guppy.")
+# @click.option(
+#         "-e",
+#         "--expt_dir",
+#         type=str,
+#         required=True,
+#         help="Path to experiment directory.",
+#     )
+# @click.option(
+#     "-m",
+#     "--basecalling_method",
+#     type=click.Choice(["hac", "fast"]),
+#     default="hac",
+#     help="Basecalling method, high accuracy or fast."
+# )
+# @click.option(
+#     "-k",
+#     "--barcoding_strategy",
+#     type=click.Choice(BARCODING_KIT_MAPPING),
+#     default="native24",
+#     help="Barcoding strategy, human-readable names that map to ONT kits."
+# )
+# @click.option(
+#     "-b", 
+#     "--both_ends",
+#     is_flag=True,
+#     default=False,
+#     help="Require both ends to have barcode?"
+# )
+# def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
+#     from nomadic.pipeline import guppy_barcode
+#     guppy_barcode.main(expt_dir, basecalling_method, barcoding_strategy, both_ends)
 
 
 @cli.command(short_help="Map to P.f. reference.")
