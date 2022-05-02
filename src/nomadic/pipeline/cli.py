@@ -44,10 +44,6 @@ def barcode_option(fn):
     )(fn)
     return fn
 
-from .guppy.commands import barcode
-from .map.commands import map
-from .find.commands import find
-
 
 # ================================================================
 # Entry point for all commands
@@ -88,31 +84,6 @@ cli.add_command(find)
 
 from .bmrc.commands import bmrc
 cli.add_command(bmrc)
-
-
-@cli.command(short_help="Run complete pipeline.")
-@experiment_options
-@barcode_option
-def runall(expt_dir, config, barcode):
-    """
-    Run the complete NOMADIC pipeline
-
-    """
-    from nomadic.pipeline import (
-        map_pf,
-        remap_to_hs,
-        qc_bams,
-        qc_bams_overview,
-        target_extraction,
-        target_extraction_overview,
-    )
-
-    map_pf.main(expt_dir, config, barcode)
-    remap_to_hs.main(expt_dir, config, barcode)
-    qc_bams.main(expt_dir, config, barcode)
-    qc_bams_overview.main(expt_dir, config)
-    target_extraction.main(expt_dir, config, barcode)
-    target_extraction_overview.main(expt_dir, config)
 
 
 if __name__ == "__main__":
