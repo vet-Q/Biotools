@@ -8,7 +8,7 @@ from .barcoding import BARCODING_KIT_MAPPING, run_guppy_barcode
 # ================================================================
 
 
-ONLY_PASS = True  # only run barcoding on passing .fastq files passing guppy QC
+ONLY_PASS = True   # only demultiplex .fastq that pass guppy quality control
 
 
 # ================================================================
@@ -62,9 +62,6 @@ def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
     Run guppy demultiplexing on .fastq files
 
     """
-    # this won't work, it executes in a temporary environment
-    # LOAD GUPPY
-    #subprocess.run("module load ont-guppy/5.0.11_linux64", shell=True, check=True)
 
     # SELECT KIT
     barcode_kits = BARCODING_KIT_MAPPING[barcoding_strategy]
