@@ -1,15 +1,32 @@
-from calendar import c
+import click
+from nomadic.pipeline.cli import experiment_options, barcode_option
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 from nomadic.pipeline.calling.callers import caller_collection
 
 
-def call(expt_dir, config, barcode, method):
+@click.command(short_help="Call variants across targets.")
+@experiment_options
+@barcode_option
+@click.option(
+    "-m",
+    "--method",
+    type=click.Choice(caller_collection),
+    required=True,
+    help="Variant calling method to use.",
+)
+@click.option(
+    "--downsample", is_flag=True, help="Produce an overview across all barcodes."
+)
+def call(expt_dir, config, barcode, method, downsample):
     """
-    Call variants for all target amplicons using a given
-    calling method
-    
+    Run analyses of a specific set of amplicon targets
+
+    TODO:
+    - Probably want an additional argument here specifying targets
+    - Would add flexibility
+
     """
     # PARSE INPUTS
     script_descrip = "NOMADIC: Map .fastq files to Plasmodium falciparum"
