@@ -261,15 +261,15 @@ class Gene:
         Check if a given mutation, specified by a chromosome `chrom`,
         position `pos`, reference base `ref` and alternative base `alt`
         exists within the gene.
-        
+
         If it does, return the amino-acid level consequence of the mutation,
         e.g. K76T.
-        
+
         If it does not, return None.
-        
+
         Note that all variants are represented with respect to the forward strand,
         though some genes may be on the reverse strand.
-        
+
         """
 
         if not self.chrom == chrom:
@@ -277,7 +277,7 @@ class Gene:
 
         if pos not in self.positions:
             return None
-        
+
         if self.strand == "-":
             ref = self._reverse_compliment(ref)
             alt = self._reverse_compliment(alt)
