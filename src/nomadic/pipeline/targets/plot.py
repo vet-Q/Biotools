@@ -1,40 +1,11 @@
+import random
 import pandas as pd
 import numpy as np
-import random
-
-from nomadic.lib.generic import print_header, print_footer, produce_dir
-from nomadic.lib.parsing import build_parameter_dict
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# ================================================================
-# Load data
-#
-# ================================================================
 
-
-def combine_barcode_dataframes(csv_filename, script_dir, params):
-    """
-    Combine a particular dataframe across all barcodes
-
-    """
-
-    dfs = []
-    for barcode in params["barcodes"]:
-        csv_path = f"{params['barcodes_dir']}/{barcode}/{script_dir}/{csv_filename}"
-        df = pd.read_csv(csv_path)
-        # df.insert(0, "barcode", barcode)
-        dfs.append(df)
-
-    return pd.concat(dfs)
-
-
-# ================================================================
-# Plotting
-#
-# ================================================================
 
 
 def plot_dataframe_heat(
@@ -239,68 +210,3 @@ class BalancePlotter:
         if output_path is not None:
             fig.savefig(output_path, bbox_inches="tight", pad_inches=0.5, dpi=300)
             plt.close(fig)
-
-
-# ================================================================
-# Main script, run from `cli.py`
-#
-# ================================================================
-
-
-def main(expt_dir, config):
-    """
-    Overview of coverage across amplicons
-
-    """
-
-    # PARSE INPUTS
-    script_descrip = "NOMADIC: Overview of target extraction."
-    t0 = print_header(script_descrip)
-    script_dir = "target-extraction"
-    params = build_parameter_dict(expt_dir, config, barcode=None)
-    output_dir = produce_dir(params["nomadic_dir"], script_dir)
-
-    # LOAD DATA
-    joint_df = combine_barcode_dataframes(
-        csv_filename="table.extraction.summary.csv",
-        script_dir="target-extraction",
-        params=params,
-    )
-
-    # Merge with metadata
-    merged_df = pd.merge(left=joint_df, right=params["metadata"], on="barcode")
-
-    # Write
-    merged_df.to_csv(f"{output_dir}/table.target_coverage.overview.csv", index=False)
-
-    # Iterate over overlap types and plot
-    overlap_types = ["complete", "any"]
-    for overlap_type in overlap_types:
-
-        # Reduce to plotting information
-        plot_df = merged_df.query("overlap == @overlap_type")
-
-        # Pivot for heatmap
-        pivot_df = plot_df.pivot(
-            index="sample_id", columns="gene_name", values="reads_mapped"
-        )
-
-        # Plot heatmap
-        plot_dataframe_heat(
-            pivot_df,
-            cmap="Wistia",
-            output_path=f"{output_dir}/plot.reads_mapped.heatmap.{overlap_type}.pdf",
-        )
-
-        # Plot stripplot
-        plotter = BalancePlotter(
-            sample_ids=plot_df["sample_id"],
-            gene_names=plot_df["gene_name"],
-            values=plot_df["reads_mapped"],
-        )
-        plotter.set_gene_color_pal("Spectral")
-        plotter.plot(
-            output_path=f"{output_dir}/plot.reads_mapped.stripplot.{overlap_type}.pdf"
-        )
-
-    print_footer(t0)

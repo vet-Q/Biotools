@@ -1,10 +1,14 @@
 import os
+import click
 
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_bams import samtools_index
-from nomadic.lib.mapping import Mapper
+
+from nomadic.pipeline.cli import experiment_options, barcode_option
+
 from nomadic.lib.references import PlasmodiumFalciparum3D7
+from .mappers import Mapper
 
 
 # ================================================================
@@ -13,7 +17,31 @@ from nomadic.lib.references import PlasmodiumFalciparum3D7
 # ================================================================
 
 
-def main(expt_dir, config, barcode):
+
+@click.command(short_help="Map to P.f. reference.")
+@experiment_options
+@barcode_option
+# @click.option(
+#         "-e",
+#         "--expt_dir",
+#         type=str,
+#         required=True,
+#         help="Path to experiment directory.",
+#     )
+# @click.option(
+#         "-c",
+#         "--config",
+#         type=str,
+#         default="configs/default.ini",
+#         help="Path to NOMADIC configuration (.ini) file.",
+#     )
+# @click.option(
+#         "-b",
+#         "--barcode",
+#         type=int,
+#         help="Optionally run command for only a single barcode.",
+#     )
+def map(expt_dir, config, barcode):
     """
     Map .fastq files found in the experiment directory `expt_dir` to the
     P. falciparum reference genome.

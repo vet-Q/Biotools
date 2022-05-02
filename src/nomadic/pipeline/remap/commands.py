@@ -1,3 +1,4 @@
+import click
 import subprocess
 
 from nomadic.lib.generic import print_header, print_footer
@@ -7,6 +8,7 @@ from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
     HomoSapiens,
 )
+from nomadic.pipeline.cli import experiment_options, barcode_option
 
 
 # ================================================================
@@ -35,7 +37,11 @@ def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
 # ================================================================
 
 
-def main(expt_dir, config, barcode):
+
+@click.command(short_help="Map unmapped reads to H.s.")
+@experiment_options
+@barcode_option
+def remap(expt_dir, config, barcode):
     """
     Remap all reads that failed to map to P.f. referece genome
     to human referece genome
