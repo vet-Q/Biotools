@@ -298,5 +298,10 @@ def bmrc(expt_dir, config, pipeline):
     submit_bmrc.main(expt_dir, config, pipeline)
 
 
+from nomadic.pipeline.find.commands import find
+
+cli.add_command(find)
+
+
 if __name__ == "__main__":
     cli()
