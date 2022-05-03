@@ -1,6 +1,8 @@
 import click
 from nomadic.lib.generic import produce_dir
+from .basecalling import BASECALL_METHODS, run_guppy_basecaller
 from .barcoding import BARCODING_KIT_MAPPING, run_guppy_barcode
+
 
 # ================================================================
 # Parameters
@@ -17,9 +19,41 @@ ONLY_PASS = True  # only demultiplex .fastq that pass guppy quality control
 # ================================================================
 
 
-# ADD CLICK
-def basecall():
-    pass
+@click.command(short_help="Basecall with guppy")
+@click.option(
+    "-e",
+    "--expt_dir",
+    type=str,
+    required=True,
+    help="Path to experiment directory.",
+)
+@click.option(
+    "-m",
+    "--basecalling_method",
+    type=click.Choice(BASECALL_METHODS),
+    default="hac",
+    help="Basecalling method, high accuracy or fast.",
+)
+def basecall(expt_dir, basecalling_method):
+    """
+    Run guppy basecalling on an experiment
+
+    """
+
+    # Define directories
+    input_dir = f"{expt_dir}/minknow"
+    output_dir = produce_dir(expt_dir, "guppy", basecalling_method)
+
+    # Print to stdout
+    print(f"Experiment dir: {expt_dir}")
+    print(f"Input dir: {input_dir}")
+    print(f"Basecalling method: {basecalling_method}")
+    print(f"Output dir: {output_dir}")
+
+    # Run guppy basecalling
+    run_guppy_basecaller(
+        input_dir=input_dir, output_dir=output_dir, method=basecalling_method
+    )
 
 
 # ================================================================
@@ -39,7 +73,7 @@ def basecall():
 @click.option(
     "-m",
     "--basecalling_method",
-    type=click.Choice(["hac", "fast"]),
+    type=click.Choice(BASECALL_METHODS),
     default="hac",
     help="Basecalling method, high accuracy or fast.",
 )
