@@ -23,8 +23,10 @@ def cli():
 
 
 from .search import search
+from .fasta import fasta
 
 cli.add_command(search)
+cli.add_command(fasta)
 
 if __name__ == "__main__":
     cli()
