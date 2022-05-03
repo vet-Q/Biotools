@@ -66,7 +66,7 @@ def cli():
 # ================================================================
 
 
-from .guppy.commands import barcode
+from .guppy.commands import barcode, basecall
 from .map.commands import map
 from .remap.commands import remap
 from .qcbams.commands import qcbams
@@ -74,6 +74,7 @@ from .targets.commands import targets
 from .calling.commands import call
 from .find.commands import find
 
+cli.add_command(basecall)
 cli.add_command(barcode)
 cli.add_command(map)
 cli.add_command(remap)
