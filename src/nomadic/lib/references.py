@@ -105,6 +105,18 @@ class PlasmodiumFalciparumDd2(PlasmoDB):
         super().__init__(species="Pfalciparum", strain="Dd2")
 
 
+class PlasmodiumFalciparumHB3(PlasmoDB):
+    def __init__(self):
+        self.name = "PfHB3"
+        super().__init__(species="Pfalciparum", strain="HB3")
+
+
+class PlasmodiumFalciparumGB4(PlasmoDB):
+    def __init__(self):
+        self.name = "PfGB4"
+        super().__init__(species="Pfalciparum", strain="GB4")
+
+
 class PlasmodiumOvale(ENA):
     def __init__(self):
         self.name = "Po"
@@ -193,6 +205,8 @@ if __name__ == "__main__":
     references = [
         PlasmodiumFalciparum3D7(),
         PlasmodiumFalciparumDd2(),
+        PlasmodiumFalciparumHB3(),
+        PlasmodiumFalciparumGB4(),
         PlasmodiumOvale(),
         PlasmodiumMalariae(),
         HomoSapiens()
