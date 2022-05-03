@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 # ================================================================
 # Load and handle gff files
-# TODO: this *maybe* should be moved into `lib`
+# 
 # ================================================================
 
 
@@ -13,6 +13,13 @@ def load_gff(gff_path):
     Load a Gene Feature Format file from a `gff_path` into
     a pandas data frame
 
+    param:
+        gff_path : str
+            Path to .gff file.
+    returns:
+        _ : Pandas DataFrame
+        A .gff file loaded as a pandas dataframe.
+        
     """
 
     # Define an entry in the gff
@@ -51,3 +58,11 @@ def extract_gff_attribute(gff_df, extract):
         results.append(result[0] if result else None)
 
     return results
+
+
+def add_gff_fields(gff_df, fields=["ID", "Name", "Parent"]):
+    
+    for field in fields:
+        gff_df[field] = extract_gff_attribute(gff_df, extract=field)
+    
+    return gff_df

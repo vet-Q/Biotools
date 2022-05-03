@@ -1,6 +1,6 @@
 import pandas as pd
 from dataclasses import dataclass
-from .gff import load_gff, extract_gff_attribute
+from nomadic.lib.process_gffs import load_gff, extract_gff_attribute
 
 
 # ================================================================
