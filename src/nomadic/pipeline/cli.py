@@ -73,6 +73,7 @@ from .qcbams.commands import qcbams
 from .targets.commands import targets
 from .calling.commands import call
 from .find.commands import find
+from .error.commands import error
 
 cli.add_command(basecall)
 cli.add_command(barcode)
@@ -82,6 +83,7 @@ cli.add_command(qcbams)
 cli.add_command(targets)
 cli.add_command(call)
 cli.add_command(find)
+cli.add_command(error)
 
 from .bmrc.commands import bmrc
 
