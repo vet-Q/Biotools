@@ -89,7 +89,7 @@ def create_snp_table(ref_msa, samp_msa, add_chrom=None):
     return snp_table
 
 
-def build_joint_snp_table_from_msa(msa_path):
+def build_joint_snp_table_from_msa(msa_path, reference_name="Pf3D7"):
     """
     Build a combined variant table for all alignments
     within an `msa_path`
@@ -100,7 +100,7 @@ def build_joint_snp_table_from_msa(msa_path):
     dt = load_msa_as_dict(msa_path)
 
     # Extract reference strain information
-    ref_header = [h for h in dt if h.startswith(">Pf3D7")][0]
+    ref_header = [h for h in dt if h.startswith(reference_name)][0]
     ref_msa = dt.pop(ref_header)
     ref_region = ref_header.split("|")[-1].strip()
     ref_contig, ref_intv = ref_region.split(":")
