@@ -2,6 +2,7 @@ import os
 from nomadic.lib.process_gffs import load_gff, add_gff_fields
 from nomadic.lib.process_bams import samtools_mpileup
 from .bed import TargetBEDBuilder
+from .summarise import create_basecall_dfs
 
 
 class ErrorAnalysisAlgorithm:
@@ -63,5 +64,33 @@ class ErrorAnalysisAlgorithm:
             output_pileup=self.pileup_path
         )
 
-    def summarise_mpileup(self): # this is amino acid or nucleotide level
-        pass
+    def get_mpileup_summary(self): # this is amino acid or nucleotide level
+        """
+        Create a summary of the mpileup results;
+        In future, would want to split this out into two to allow for amino
+        acid or nucleotide level; using abstract base class
+        
+        """
+        return create_basecall_dfs(self.pileup_path)
+
+
+
+
+  
+#   # Create mutation and indel data frames
+#         print("    Analysing basecalls...")
+#         mutation_df, indel_df 
+        
+#         # Annotate
+#         mutation_df.insert(0, "ID", target_id)
+#         mutation_df.insert(1, "gene_name", params["name_dt"][target_id])
+#         indel_df.insert(0, "ID", target_id)
+#         indel_df.insert(1, "gene_name", params["name_dt"][target_id])
+        
+#         # Save
+#         mutation_df.to_csv(output_pileup.replace(".mpileup", ".nt_error.csv"))
+#         indel_df.to_csv(output_pileup.replace(".mpileup", ".indel_lengths.csv"))
+        
+#         # Store
+#         all_mutation_df.append(mutation_df)
+#         all_indel_df.append(indel_df)

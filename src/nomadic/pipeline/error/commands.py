@@ -73,14 +73,44 @@ def error(expt_dir, config, barcode, approach):
         for target_id, target_name in params["name_dt"].items():
             print(f"  Target: {target_id} = {target_name}")
 
+            # Run algorithm to produce summary data rfames
             bam_path = f"{params['barcodes_dir']}/{barcode}/target-extraction/reads.target.{target_name}.bam"
             algorithm.set_target(target_id)
             algorithm.create_target_bed(bed_builder)
             algorithm.create_target_mpileup(bam_path=bam_path)
+            mutation_df, indel_df = algorithm.get_mpileup_summary()
+
+            # Annotate
+            mutation_df.insert(0, "ID", target_id)
+            mutation_df.insert(1, "gene_name", params["name_dt"][target_id])
+            indel_df.insert(0, "ID", target_id)
+            indel_df.insert(1, "gene_name", params["name_dt"][target_id])
+            
+            # Save
+            mutation_df.to_csv(algorithm.pileup_path.replace(".mpileup", ".nt_error.csv"))
+            indel_df.to_csv(algorithm.pileup_path.replace(".mpileup", ".indel_lengths.csv"))
+
+
 
         
         
 
 
 
+     #   # Create mutation and indel data frames
+#         print("    Analysing basecalls...")
+#         mutation_df, indel_df 
         
+#         # Annotate
+#         mutation_df.insert(0, "ID", target_id)
+#         mutation_df.insert(1, "gene_name", params["name_dt"][target_id])
+#         indel_df.insert(0, "ID", target_id)
+#         indel_df.insert(1, "gene_name", params["name_dt"][target_id])
+        
+#         # Save
+#         mutation_df.to_csv(output_pileup.replace(".mpileup", ".nt_error.csv"))
+#         indel_df.to_csv(output_pileup.replace(".mpileup", ".indel_lengths.csv"))
+        
+#         # Store
+#         all_mutation_df.append(mutation_df)
+#         all_indel_df.append(indel_df)   
