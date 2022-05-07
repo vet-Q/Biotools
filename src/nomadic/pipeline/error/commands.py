@@ -18,7 +18,7 @@ from .algorithm import ErrorAnalysisAlgorithm
 from .bed import ByProteinCodingGene
 
 
-@click.command(short_help="Find a set of target mutations.")
+@click.command(short_help="Characterise error rate.")
 @experiment_options
 @barcode_option
 @click.option(
