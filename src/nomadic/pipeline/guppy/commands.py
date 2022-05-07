@@ -19,7 +19,7 @@ ONLY_PASS = True  # only demultiplex .fastq that pass guppy quality control
 # ================================================================
 
 
-@click.command(short_help="Basecall with guppy")
+@click.command(short_help="Basecall with guppy.")
 @click.option(
     "-e",
     "--expt_dir",
