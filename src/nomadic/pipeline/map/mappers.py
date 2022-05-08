@@ -1,84 +1,136 @@
 import os
 import subprocess
+from abc import ABC, abstractmethod
 
 
-# Want to migrate here to using an ABC for mappers
-# This should allow incorporation of `bwa`
+# ================================================================
+# Define abstract base class for different mapping
+# algorithms
+# ================================================================
 
 
-def run_minimap2(fastqs, ref_fasta, output_bam, flags=""):
-    """
-    Pipeline to run minimap2, compress results
-    to bam file, and sort.
+class MappingAlgorithm(ABC):
+    def __init__(self, reference):
+        """
+        Abstract base class for implementing different mapping algorithms
 
-    params
-        fastqs : list, str, shape (n_fastqs, )
-            A list of paths to .fastq files that
-            will be mapped.
-        ref_fasta : str
-            Path to reference genome .fasta file.
-        flags : str [optional]
-            Additional flags to pass to minimap2.
-        output_bam : str
-            Path to output BAM file.
+        Input can be either .fastq files or a .bam file.
 
-    returns
-        None
+        """
+        # Set reference
+        self.reference = reference
 
-    """
+        # Set defaults
+        self.map_cmd = None
+        self.remap_cmd = ""
+        self.input_fastqs = "-"
 
-    cmd = "minimap2 -ax map-ont %s %s %s | " % (ref_fasta, " ".join(fastqs), flags)
-    cmd += "samtools view -S -b - | "
-    cmd += "samtools sort -o %s" % output_bam
+    def remap_from_bam(self, input_bam):
+        """
+        Prepare to remap unmapped reads in a .bam file at `input_bam`
+        to the `reference`
 
-    subprocess.run(cmd, shell=True, check=True)
+        """
+        self.remap_cmd = f"samtools view -f 0x004 {input_bam}"
+        self.remap_cmd += " | samtools fastq | "
 
-    return None
+    def map_from_fastqs(self, fastq_dir):
+        """
+        Prepare to map all .fastq files found in a directory `fastq_dir`
 
-
-class Mapper:
-    """
-    Map a set of reads in `.fastq` format to a particular
-    reference genome
-
-    """
-
-    def __init__(self, fastq_dir, reference):
-        self.fastq_dir = fastq_dir
-        self.fastqs = [
-            f"{fastq_dir}/{fn}"
-            for fn in os.listdir(fastq_dir)
-            if fn.endswith(".fastq") or fn.endswith(".fastq.gz")
+        """
+        fastq_dir = fastq_dir
+        fastqs = [
+            f"{fastq_dir}/{fastq}"
+            for fastq in os.listdir(fastq_dir)
+            if fastq.endswith(".fastq") or fastq.endswith(".fastq.gz")
         ]
-        self.ref = reference
+        self.input_fastqs = " ".join(fastqs)
 
-    def run_minimap2(self, output_bam, flags="--eqx --MD"):
+    @abstractmethod
+    def _define_mapping_command(self, output_bam, flags):
         """
-        Pipeline to run minimap2, compress results
-        to bam file, and sort.
+        Define the command for the mapping algorithm
+        """
+        pass
 
-        params
-            fastqs : list, str, shape (n_fastqs, )
-                A list of paths to .fastq files that
-                will be mapped.
-            ref_fasta : str
-                Path to reference genome .fasta file.
-            flags : str [optional]
-                Additional flags to pass to minimap2.
-            output_bam : str
-                Path to output BAM file.
-
-        returns
-            None
+    def run(self, output_bam, verbose=False):
+        """
+        Run the mapping algorithm inputs
 
         """
+        # Define the mapping command
+        self._define_mapping_command(output_bam)
+        if self.map_cmd is None:
+            raise ValueError("Must define mapping command before running algorithm.")
 
-        cmd = "minimap2"
-        cmd += f" -ax map-ont {self.ref.fasta_path} {' '.join(self.fastqs)}"
-        cmd += f" {flags} |"
-        cmd += " samtools view -S -b - |"
-        cmd += " samtools sort -o %s" % output_bam
+        # Combine optional remapping command with mapping command
+        cmd = self.remap_cmd + self.map_cmd
 
+        if verbose:
+            print(f"Complete command: {cmd}")
+
+        # Run
         subprocess.run(cmd, shell=True, check=True)
 
-        return None
+
+# ================================================================
+# Concrete implementations of mapping algorithms
+#
+# ================================================================
+
+
+class Minimap2(MappingAlgorithm):
+    """
+    Map long reads with `minimap2`
+
+    """
+
+    def _define_mapping_command(self, output_bam, flags="--eqx --MD"):
+        """
+        Run minimap2, compress result to .bam file, and sort
+
+        """
+        self.map_cmd = "minimap2"
+        self.map_cmd += (
+            f" -ax map-ont {flags} {self.reference.fasta_path} {self.input_fastqs} |"
+        )
+        self.map_cmd += " samtools view -S -b - |"
+        self.map_cmd += f" samtools sort -o {output_bam}"
+
+
+class BwaMem(MappingAlgorithm):
+    """
+    Map short reads with `bwa mem`
+
+    """
+
+    def create_reference_index(self):
+        """
+        Create an index for bwa
+
+        Produces a set of index files with the same prefix
+        as `self.reference.fasta_path`.
+
+        """
+        index_cmd = f"bwa index {self.reference.fasta_path}"
+        subprocess.run(index_cmd, shell=True, check=True)
+
+    def _define_mapping_command(self, output_bam, flags=""):
+        """
+        Run bwa, compress result to .bam file, and sort
+
+        """
+        self.map_cmd = "bwa mem"
+        self.map_cmd += f" {flags} {self.reference.fasta_path} {self.input_fastqs} |"
+        self.map_cmd += " samtools view -S -b - |"
+        self.map_cmd += f" samtools sort -o {output_bam}"
+
+
+# ================================================================
+# Create a collection of mapping algorithms
+#
+# ================================================================
+
+
+MAPPER_COLLECTION = {"minimap2": Minimap2, "bwa": BwaMem}

@@ -4,11 +4,9 @@ import click
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_bams import samtools_index
-
-from nomadic.pipeline.cli import experiment_options, barcode_option
-
 from nomadic.lib.references import PlasmodiumFalciparum3D7
-from .mappers import Mapper
+from nomadic.pipeline.cli import experiment_options, barcode_option
+from .mappers import MAPPER_COLLECTION
 
 
 # ================================================================
@@ -20,27 +18,14 @@ from .mappers import Mapper
 @click.command(short_help="Map to P.f. reference.")
 @experiment_options
 @barcode_option
-# @click.option(
-#         "-e",
-#         "--expt_dir",
-#         type=str,
-#         required=True,
-#         help="Path to experiment directory.",
-#     )
-# @click.option(
-#         "-c",
-#         "--config",
-#         type=str,
-#         default="configs/default.ini",
-#         help="Path to NOMADIC configuration (.ini) file.",
-#     )
-# @click.option(
-#         "-b",
-#         "--barcode",
-#         type=int,
-#         help="Optionally run command for only a single barcode.",
-#     )
-def map(expt_dir, config, barcode):
+@click.option(
+    "-a",
+    "--algorithm",
+    type=click.Choice(MAPPER_COLLECTION),
+    default="minimap2",
+    help="Algorithm used to map reads.",
+)
+def map(expt_dir, config, barcode, algorithm):
     """
     Map .fastq files found in the experiment directory `expt_dir` to the
     P. falciparum reference genome.
@@ -84,11 +69,12 @@ def map(expt_dir, config, barcode):
             output_bam = f"{barcode_dir}/{barcode}.{reference.name}.final.sorted.bam"
 
             # Instantiate mapper
-            mapper = Mapper(fastq_dir, reference)
+            mapper = MAPPER_COLLECTION[algorithm](reference)
 
             # Map
             print("Mapping...")
-            mapper.run_minimap2(output_bam)
+            mapper.map_from_fastqs(fastq_dir)
+            mapper.run(output_bam)
 
             # Index
             print("Indexing...")

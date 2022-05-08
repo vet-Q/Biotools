@@ -9,26 +9,7 @@ from nomadic.lib.references import (
     HomoSapiens,
 )
 from nomadic.pipeline.cli import experiment_options, barcode_option
-
-
-# ================================================================
-# Run Minimap2, but only on unmapped reads from a .bam
-#
-# ================================================================
-
-
-def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
-    """Remap unmapped reads to a new reference genome"""
-
-    cmd = f"samtools view -f 0x004 {input_bam}"  # get unmapped reads
-    cmd += " | samtools fastq"  # convert back to .fastq
-    cmd += f" | minimap2 -ax map-ont {flags} {reference.fasta_path} -"  # remap
-    cmd += " | samtools view -S -b -"  # convert to .bam
-    cmd += f" | samtools sort -o {output_bam}"  # sort and write
-
-    subprocess.run(cmd, shell=True, check=True)
-
-    return None
+from nomadic.pipeline.map.mappers import MAPPER_COLLECTION
 
 
 # ================================================================
@@ -40,7 +21,14 @@ def remap_with_minimap2(input_bam, output_bam, reference, flags="--eqx --MD"):
 @click.command(short_help="Map unmapped reads to H.s.")
 @experiment_options
 @barcode_option
-def remap(expt_dir, config, barcode):
+@click.option(
+    "-a",
+    "--algorithm",
+    type=click.Choice(MAPPER_COLLECTION),
+    default="minimap2",
+    help="Algorithm used to map reads."
+)
+def remap(expt_dir, config, barcode, algorithm):
     """
     Remap all reads that failed to map to P.f. referece genome
     to human referece genome
@@ -73,9 +61,14 @@ def remap(expt_dir, config, barcode):
         input_bam = f"{barcode_dir}/{barcode}.{pf_reference.name}.final.sorted.bam"
         output_bam = f"{barcode_dir}/{barcode}.{hs_reference.name}.final.sorted.bam"
 
+        # Instantiate mapper
+        mapper = MAPPER_COLLECTION[algorithm](hs_reference)
+
         # Remap
         print("Remapping to H.s...")
-        remap_with_minimap2(input_bam, output_bam, hs_reference)
+        mapper.remap_from_bam(input_bam)
+        mapper.run(output_bam)
+
         # Index
         print("Indexing...")
         samtools_index(input_bam=output_bam)
