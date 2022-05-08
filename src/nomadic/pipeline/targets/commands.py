@@ -150,8 +150,8 @@ def target_extraction(expt_dir, config, barcode):
             target_bam_path = f"{output_dir}/reads.target.{target.name}.bam"
 
             print(f"\tFinding any overlapping reads...")
-            # Any overlap >=2000bp
-            samtools_view(mapped_bam_path, f"{target.region} -m 2000", target_bam_path)
+            # Any overlap >=2000bp --> removed this to allow for short read overlapping
+            samtools_view(mapped_bam_path, f"{target.region}", target_bam_path) # "-m 2000"; can filter by size here
             samtools_index(target_bam_path)
 
             # Compute summary statistics
