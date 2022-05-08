@@ -35,7 +35,8 @@ def combine_barcode_dataframes(csv_filename, script_dir, params):
     for barcode in params["barcodes"]:
         csv_path = f"{params['barcodes_dir']}/{barcode}/{script_dir}/{csv_filename}"
         df = pd.read_csv(csv_path)
-        df.insert(0, "barcode", barcode)
+        if not "barcode" in df.columns:
+            df.insert(0, "barcode", barcode)
         dfs.append(df)
 
     return pd.concat(dfs)
