@@ -38,23 +38,23 @@ class VariantCaller(ABC):
 
 
 class LongShot(VariantCaller):
+    """
+    Implementation for calling variants with `longshot`
+
+    """
+
     def set_arguments(self, fasta_path):
         """
-        Set command line arguments necessary to run
-        longshot
+        Set any required arguments as instance variables
 
         """
-
         self.fasta_path = fasta_path
-
-        return None
 
     def call_variants(self):
         """
-        Call variants using longshot
+        Call variants
 
         """
-
         cmd = "longshot -F"
         cmd += f" --bam {self.bam_path}"
         cmd += f" --ref {self.fasta_path}"
@@ -62,20 +62,25 @@ class LongShot(VariantCaller):
 
         subprocess.run(cmd, shell=True, check=True)
 
-        return None
-
 
 class BcfTools(VariantCaller):
-    def set_arguments(self, fasta_path):
-        """Set bcftools call arguments"""
+    """
+    Implementation for calling variants with `bcftools`
 
+    """
+
+    def set_arguments(self, fasta_path):
+        """
+        Set any required arguments as instance variables
+
+        """
         self.fasta_path = fasta_path
 
-        return None
-
     def call_variants(self):
-        """Call variants using bcftools call"""
+        """
+        Call variants
 
+        """
         cmd = "bcftools mpileup -Ou"
         cmd += f" -f {self.fasta_path}"
         cmd += f" {self.bam_path}"
@@ -84,7 +89,39 @@ class BcfTools(VariantCaller):
 
         subprocess.run(cmd, shell=True, check=True)
 
-        return None
+
+class GatkHaplotypeCaller(VariantCaller):
+    """
+    Implementation for calling variants with `gatk HaplotypeCaller`;
+    for now, just running with default settings
+
+    """
+
+    with_module_load = True  # at present, only running from cluster
+    module = "GATK/4.2.5.0-GCCcore-11.2.0-Java-11"
+
+    def set_arguments(self, fasta_path):
+        """
+        Set any required arguments as instance variables
+
+        """
+        self.fasta_path = fasta_path
+
+    def call_variants(self):
+        """
+        Call variants
+
+        """
+        cmd = ""
+        if self.with_module_load:
+            cmd = f"module load {self.module} && "
+
+        cmd += "gatk HaplotypeCaller"
+        cmd += f" -R {self.fasta_path}"
+        cmd += f" -I {self.bam_path}"
+        cmd += f" -O {self.vcf_path}"
+
+        subprocess.run(cmd, shell=True, check=True)
 
 
 # ================================================================
@@ -93,4 +130,8 @@ class BcfTools(VariantCaller):
 # ================================================================
 
 # Note, they are already initialised
-caller_collection = {"longshot": LongShot(), "bcftools": BcfTools()}
+caller_collection = {
+    "longshot": LongShot(),
+    "bcftools": BcfTools(),
+    "gatk": GatkHaplotypeCaller(),
+}
