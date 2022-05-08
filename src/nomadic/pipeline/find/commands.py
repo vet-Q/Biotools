@@ -23,6 +23,10 @@ def find(expt_dir, config, method):
     """
     Find a specific set of mutations across target amplicons
 
+    TODO:
+    - PASS COVERAGE INFORMATION -- important piece of context
+      for interpreting genotyping results
+
     """
 
     # PARSE INPUTS

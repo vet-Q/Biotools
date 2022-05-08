@@ -49,8 +49,10 @@ def load_vcf_using_allel(vcf_path, add_genotypes=True, only_snp=True):
     callset = allel.read_vcf(vcf_path)
 
     if callset is None:
-        print("No variants found.")
-        return pd.DataFrame()
+        print(f"No variants found in file at {vcf_path}.")
+        columns = ["chrom", "pos", "ref", "alt", "filter", "qual"]
+        columns += ["gt"] if add_genotypes else []
+        return pd.DataFrame(columns=columns)
 
     # Check number of samples
     assert callset["samples"].shape[0] == 1, "Function built for 1 sample."
