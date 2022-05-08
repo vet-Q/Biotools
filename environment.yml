@@ -16,6 +16,7 @@ dependencies:
   - seaborn
   - longshot
   - mafft
+  - bwa
   - black
   - flake8
   - pip
