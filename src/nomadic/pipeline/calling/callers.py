@@ -1,5 +1,6 @@
 import subprocess
 from abc import ABC, abstractmethod
+from nomadic.lib.process_vcfs import bcftools_reheader
 
 
 # ================================================================
@@ -9,12 +10,14 @@ from abc import ABC, abstractmethod
 
 
 class VariantCaller(ABC):
-    """
-    Base class for a selection of variant callers
-
-    """
-
     def __init__(self):
+        """
+        Abstract base class defining interface for a collection
+        of variant calling algorithms
+
+        Facilitates BAM --> VCF
+
+        """
         self.bam_path = None
         self.vcf_path = None
 
@@ -27,9 +30,14 @@ class VariantCaller(ABC):
         pass
 
     @abstractmethod
-    def call_variants(self):
+    def call_variants(self, sample_name=None):
+        """ 
+        Call variants, optionally naming sample in
+        output VCF file
+        
+        """
         pass
-
+      
 
 # ================================================================
 # Concrete implementations
@@ -50,7 +58,7 @@ class LongShot(VariantCaller):
         """
         self.fasta_path = fasta_path
 
-    def call_variants(self):
+    def call_variants(self, sample_name=None):
         """
         Call variants
 
@@ -59,6 +67,9 @@ class LongShot(VariantCaller):
         cmd += f" --bam {self.bam_path}"
         cmd += f" --ref {self.fasta_path}"
         cmd += f" --out {self.vcf_path}"
+        
+        if sample_name is not None:
+            cmd += f" --sample_id {sample_name}"
 
         subprocess.run(cmd, shell=True, check=True)
 
@@ -76,7 +87,7 @@ class BcfTools(VariantCaller):
         """
         self.fasta_path = fasta_path
 
-    def call_variants(self):
+    def call_variants(self, sample_name=None):
         """
         Call variants
 
@@ -88,6 +99,9 @@ class BcfTools(VariantCaller):
         cmd += f" -Ou -o {self.vcf_path}"
 
         subprocess.run(cmd, shell=True, check=True)
+        
+        if sample_name is not None:
+            bcftools_reheader(self.vcf_path, self.vcf_path, [sample_name])
 
 
 class GatkHaplotypeCaller(VariantCaller):
@@ -107,7 +121,7 @@ class GatkHaplotypeCaller(VariantCaller):
         """
         self.fasta_path = fasta_path
 
-    def call_variants(self):
+    def call_variants(self, sample_name=None):
         """
         Call variants
 
