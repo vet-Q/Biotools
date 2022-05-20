@@ -99,7 +99,7 @@ def call_all_reads(expt_dir, config, barcode, method):
                 vcf_path=vcf_path,
             )
             caller.set_arguments(fasta_path=reference.fasta_path)
-            caller.call_variants()
+            caller.call_variants(sample_name=barcode)
             print("Done.")
             print("")
     print_footer(t0)
@@ -158,8 +158,8 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                     print("")
 
                     # Define output vcf
-                    vcf_fn = f"{barcode}.{target_gene}."
-                    vcf_fn += f"n{n_reads:04d}.r{ix:03d}.vcf"
+                    sample_name = f"{barcode}.n{n_reads:04d}.r{ix:03d}"
+                    vcf_fn = f"{sample_name}.{target_gene}.vcf"
                     vcf_path = f"{output_dir}/{vcf_fn}"
 
                     # Select variant calling method
@@ -172,7 +172,7 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                         vcf_path=vcf_path,
                     )
                     caller.set_arguments(fasta_path=reference.fasta_path)
-                    caller.call_variants()
+                    caller.call_variants(sample_name=sample_name)
                     print("Done.")
                     print("")
 
