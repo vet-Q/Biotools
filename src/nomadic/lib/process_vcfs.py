@@ -35,6 +35,38 @@ def bcftools_view(input_vcf, output_vcf, dry_run=False, **kwargs):
     subprocess.run(cmd, shell=True, check=True)
 
 
+def bcftools_sort(input_vcf, output_vcf, dry_run=False, **kwargs):
+    """
+    Run `bcftools sort` on an `input_vcf`
+
+    params:
+        input_vcf: str
+            Path to input `.vcf`.
+        output_vcf: strbcft
+            Path to output `.vcf`.
+        dry_run: bool
+            Print command instead of running it.
+        kwargs: key=value
+            Additional arguments will be passed to
+            bcftools view as flags; e.g. 
+            `-<key> <value>`. 
+        
+    returns
+        None
+
+    """
+
+    cmd = f"bcftools sort {input_vcf} "
+    cmd += " ".join([f"-{k} {v}" for k, v in kwargs.items()])
+    cmd += f" -o {output_vcf}"
+
+    if dry_run:
+        print(cmd)
+        return
+
+    subprocess.run(cmd, shell=True, check=True)
+
+
 def bcftools_index(input_vcf):
     """
     Run `bcftools index`
@@ -89,7 +121,7 @@ def bcftools_reheader(input_vcf, output_vcf, sample_names):
     os.remove(sample_file)
 
 
-def bcftools_merge(input_vcfs, output_vcf, dry_run=False):
+def bcftools_merge(input_vcfs, output_vcf, dry_run=False, **kwargs):
     """
     Run `bcftools merge`
     
@@ -105,7 +137,8 @@ def bcftools_merge(input_vcfs, output_vcf, dry_run=False):
     
     """
     cmd = "bcftools merge"
-    cmd += f" {' '.join(input_vcfs)}"
+    cmd += f" {' '.join(input_vcfs)} "
+    cmd += " ".join([f"-{k} {v}" for k, v in kwargs.items()])
     cmd += f" -o {output_vcf}"
 
     if dry_run:
