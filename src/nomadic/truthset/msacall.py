@@ -5,7 +5,11 @@ import pandas as pd
 from functools import reduce
 from collections import namedtuple
 from nomadic.lib.generic import produce_dir, print_header, print_footer
+from nomadic.lib.process_vcfs import bcftools_view, bcftools_sort, bcftools_index, bcftools_concat
+from nomadic.lib.references import PlasmodiumFalciparum3D7
 
+
+REFERENCE = PlasmodiumFalciparum3D7()
 
 # ================================================================
 # Run MAFFT
@@ -263,6 +267,10 @@ class MSAtoVCF:
 
         """
 
+        # Convert bases to upper case
+        self.merged_snp_df["REF"] = [c.upper() for c in self.merged_snp_df["REF"]]
+        self.merged_snp_df["ALT"] = [c.upper() for c in self.merged_snp_df["ALT"]]
+
         # Split out variant information
         variant_df = self.merged_snp_df[
             [c for c in self.merged_snp_df.columns if c in self.vcf_columns]
@@ -271,9 +279,9 @@ class MSAtoVCF:
         # Add required VCF columns
         variant_df["CHROM"] = self.reference_contig
         variant_df["POS"] = variant_df["POS"] + int(self.reference_start)
-        variant_df["QUAL"] = 0
-        variant_df["FILTER"] = "MSA"
-        variant_df["INFO"] = "*"
+        variant_df["QUAL"] = "."
+        variant_df["FILTER"] = "PASS"
+        variant_df["INFO"] = "."
         variant_df["FORMAT"] = "GT"
         variant_df = variant_df[self.vcf_columns]
 
@@ -285,10 +293,45 @@ class MSAtoVCF:
         # Create VCF dataframe
         self.vcf_df = pd.concat([variant_df, sample_df], axis=1)
 
+    @staticmethod
+    def _create_vcf_header(reference):
+        """
+        Create a valid header for a VCF file, 
+        including `contig` lines for the `reference`
+        
+        """
+        
+        # Essential format specification
+        header = "##fileformat=VCFv4.2\n"
+        
+        with open(reference.fasta_path, "r") as fasta:
+            for contig in fasta:
+
+                # Skip if not header
+                if not contig.startswith(">"):
+                    continue
+
+                # Parse header
+                ID, _, _, length, _ = contig.split("|")
+                ID = ID[1:].strip()
+                length = int(length.split("=")[1].strip())
+
+                # Add to string
+                header += f"##contig=<ID={ID},length={length}>\n"
+            
+        # Genotype fields
+        header += "##FORMAT=<ID=GT,Number=1,Type=String,Description='Genotype'>\n"
+        
+        return header
+
     def create_vcf(self, output_path=None):
         """
         Create a VCF file from a multiple sequence alignment (MSA),
         after a reference has been set
+
+        NB: Need a valid header, including genotype fields and contigs,
+        in order for downstream bcftools commands (e.g. bcftools sort),
+        to work.
 
         """
         assert self.reference_name is not None, "Please `.set_reference()` first."
@@ -302,10 +345,10 @@ class MSAtoVCF:
             with open(output_path, "w") as vcf:
 
                 # Write the header
-                vcf.write("##fileformat=VCFv4.2\n")
-                vcf.write(f"#{self.vcf_sep.join(self.vcf_df.columns)}\n")
+                vcf.write(self._create_vcf_header(REFERENCE))
 
                 # Write the information fields
+                vcf.write(f"#{self.vcf_sep.join(self.vcf_df.columns)}\n")
                 for _, row in self.vcf_df.iterrows():
                     vcf.write(f"{self.vcf_sep.join([str(v) for v in row.values])}\n")
 
@@ -332,34 +375,30 @@ def msacall(fasta_dir):
     """
     # Define directories
     t0 = print_header("TRUTHSET: Create an MSA and call SNPs")
-    msa_dir = produce_dir(fasta_dir.replace("fasta", "msa"))
+    output_dir = produce_dir("resources", "truthsets", "mafft")
+    msa_dir = produce_dir(output_dir, "msas")
 
-    fastas = [
-        f"{fasta_dir}/{fasta}"
-        for fasta in os.listdir(fasta_dir)
-        if fasta.endswith(".fasta")
-    ]
+    fastas = [fasta for fasta in os.listdir(fasta_dir) if fasta.endswith(".fasta")]
     print(f"Found {len(fastas)} .fasta files in {fasta_dir}.")
 
     # RUN MAFFT
     print("Creating MSAs with MAFFT...")
     output_msas = []
     for fasta in fastas:
-        output_msa = fasta.replace(".fasta", ".mafft.aln").replace("fasta", "msa")
-        run_mafft(fasta, output_msa)
+        input_fasta = f"{fasta_dir}/{fasta}"
+        output_msa = f"{msa_dir}/{fasta.replace('.fasta', '.mafft.aln')}"
+        run_mafft(input_fasta, output_msa)
         output_msas.append(output_msa)
     print("Done.")
     print("")
 
     # CALL SNPs
-    snp_dir = produce_dir(msa_dir.replace("msas", "msa_snps"))
-    print("Creating genotype CSVs...")
+    vcf_dir = produce_dir(msa_dir.replace("msas", "vcfs"))
+    print("Creating genotype VCFs...")
+    vcfs_to_concat = []
     for input_msa in output_msas:
 
         print(f"  {input_msa}")
-
-        # Find SNPs
-        # target_gt_df = build_joint_snp_table_from_msa(input_msa)
 
         # Write, if any SNPs were found
         vcf_builder = MSAtoVCF(input_msa)
@@ -367,15 +406,26 @@ def msacall(fasta_dir):
 
         # Writing VCF
         vcf_path = (
-            f"{snp_dir}/{os.path.basename(input_msa).replace('.mafft.aln', '.snp.vcf')}"
+            f"{vcf_dir}/{os.path.basename(input_msa).replace('.mafft.aln', '.snp.vcf')}"
         )
         print(f"  VCF written to: {vcf_path}")
         vcf_builder.create_vcf(output_path=vcf_path)
 
-        # if target_gt_df.shape[0] > 0
-        #     target_gt_df.to_csv(
-        #         f"{snp_dir}/{os.path.basename(input_msa).replace('.mafft.aln', '.snp.csv')}"
-        #     )
+        # Sort and index
+        sorted_vcf = f"{vcf_path}.sorted.gz"
+        bcftools_sort(input_vcf=vcf_path, O="z", output_vcf=sorted_vcf)
+        bcftools_index(sorted_vcf)
+
+        # Store
+        vcfs_to_concat.append(sorted_vcf)
+
+    # Concatenate and index across genes
+    target_genes_vcf = f"{vcf_dir}/target_genes.concat.vcf.gz"
+    bcftools_concat(input_vcfs=vcfs_to_concat, output_vcf=target_genes_vcf)
+    bcftools_index(target_genes_vcf)
+
+    print(f"Concatenated VCF written to: {target_genes_vcf}")
+
     print("Done.")
     print("")
     print_footer(t0)
