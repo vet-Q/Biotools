@@ -1,5 +1,6 @@
 import os
 import uuid
+import shutil
 import subprocess
 
 
@@ -108,7 +109,12 @@ def bcftools_reheader(input_vcf, output_vcf, sample_names):
     with open(sample_file, "w") as fn:
         for sample_name in sample_names:
             fn.write(f"{sample_name}\n")
-   
+
+    # Create temporary file if input and output have same name
+    if input_vcf == output_vcf:
+        output_vcf = f"{input_vcf}".replace(".vcf", f"{str(uuid.uuid4())}.vcf")
+        cleanup = True
+    
     # Construct and run command
     cmd = "bcftools reheader"
     cmd += f" {input_vcf}"
@@ -119,6 +125,11 @@ def bcftools_reheader(input_vcf, output_vcf, sample_names):
     
     # Remove file
     os.remove(sample_file)
+
+    # Clean up, if necessary
+    if cleanup:
+        shutil.move(output_vcf, input_vcf)
+        
 
 
 def bcftools_merge(input_vcfs, output_vcf, dry_run=False, **kwargs):
