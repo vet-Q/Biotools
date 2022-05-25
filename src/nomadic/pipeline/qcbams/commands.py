@@ -1,4 +1,5 @@
 import pandas as pd
+pd.options.mode.chained_assignment = None
 
 import click
 from nomadic.pipeline.cli import experiment_options, barcode_option
