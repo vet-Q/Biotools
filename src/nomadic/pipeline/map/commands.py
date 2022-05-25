@@ -56,7 +56,13 @@ def map(expt_dir, config, barcode, algorithm):
 
         # Define .fastq path
         fastq_dir = f"{params['fastq_dir']}/{barcode}"
-        n_fastqs = len(os.listdir(fastq_dir))
+        n_fastqs = len(
+            [
+                f
+                for f in os.listdir(fastq_dir)
+                if f.endswith(".fastq") or f.endswith(".fastq.gz")
+            ]
+        )
         print(f"Discovered {n_fastqs} .fastq files.")
         if n_fastqs == 0:
             continue
