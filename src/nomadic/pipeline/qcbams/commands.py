@@ -203,9 +203,6 @@ def qcbams_individual(expt_dir, config, barcode):
             read_df, "secondary_state", msc.secondary_levels
         )
 
-        # FOR DEBUGGING
-        read_df.to_csv("DEBUG.HISTOGRAM.TABLE.csv")
-
         # Prepare plotter
         plotter = ReadHistogramPlotter(read_df)
 
