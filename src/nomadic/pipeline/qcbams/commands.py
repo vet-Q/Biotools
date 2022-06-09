@@ -1,4 +1,5 @@
 import pandas as pd
+
 pd.options.mode.chained_assignment = None
 
 import click
@@ -14,8 +15,8 @@ from .classify import reduce_to_read_dataframe, convert_column_to_ordered_catego
 from .plot import (
     MappingStatesAndColors,
     HISTOGRAM_STATS,
-    ReadHistogramPlotter,
     JointHistogramPlotter,
+    ReadHistogramPlotter,
     barplot_states,
 )
 
@@ -202,18 +203,26 @@ def qcbams_individual(expt_dir, config, barcode):
             read_df, "secondary_state", msc.secondary_levels
         )
 
+        # FOR DEBUGGING
+        read_df.to_csv("DEBUG.HISTOGRAM.TABLE.csv")
+
         # Prepare plotter
         plotter = ReadHistogramPlotter(read_df)
 
         # Iterate over statistics, states, and plot
         print("Plotting...")
         for state, colors in msc.color_sets.items():
+
+            # Set states of interest, compute group sizes
             plotter.set_groups(state, colors)
             size_df = plotter.get_group_size_dataframe()
             size_df.to_csv(f"{output_dir}/table.size.{state}.csv", index=False)
 
             for histogram_stat in HISTOGRAM_STATS:
+
+                # Set statistics and create histogram
                 plotter.set_histogram_stats(**histogram_stat.__dict__)
+                plotter.create_histogram_dataframe()
 
                 # Plot
                 plotter.plot_histogram(
@@ -222,10 +231,8 @@ def qcbams_individual(expt_dir, config, barcode):
                 )
 
                 # Write to data frame
-                hist_df = plotter.get_histogram_dataframe()
-                hist_df.to_csv(
-                    f"{output_dir}/table.bin_counts.{histogram_stat.stat}.{state}.csv",
-                    index=False,
+                plotter.write_histogram_dataframe(
+                    f"{output_dir}/table.bin_counts.{histogram_stat.stat}.{state}.csv"
                 )
         print(f"Output directory: {output_dir}")
         print("Done.")

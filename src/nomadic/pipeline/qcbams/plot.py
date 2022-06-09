@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from functools import partial
 from dataclasses import dataclass
 
 # ================================================================
@@ -130,6 +131,7 @@ class ReadHistogramPlotter:
         self.grps = self.read_df.groupby(group_column, sort=False)
         self.n_grps = len(self.grps)
         self.colors = colors
+        self.columns = [n for n, _ in self.grps]
 
     def get_group_size_dataframe(self):
         """
@@ -158,58 +160,71 @@ class ReadHistogramPlotter:
         self.major_loc = major_loc
         self.minor_loc = minor_loc
 
-    def get_histogram_dataframe(self):
+    def create_histogram_dataframe(self):
         """
-        This requires `.plot_histogram()`
-        is run first
+        Create a data frame containing information
+        necessary to plot histogram
+
 
         """
 
-        hist_df = pd.DataFrame(self.hist_info[0].transpose())
-        hist_df.columns = [n for n, _ in self.grps]
-        hist_df.insert(0, "bin_lower", self.hist_info[1][:-1])
-        hist_df.insert(1, "bin_higher", self.hist_info[1][1:])
+        # Define histogram function
+        hist_func = partial(np.histogram, bins=self.bins)
 
-        return hist_df
+        # Call on groups of reads
+        self.hist_df = pd.DataFrame(
+            {grp_name: hist_func(df[self.stat])[0] for grp_name, df in self.grps}
+        )
+
+        # Insert bin boundaries
+        self.hist_df.insert(0, "bin_lower", self.bins[:-1])
+        self.hist_df.insert(1, "bin_higher", self.bins[1:])
+
+    def write_histogram_dataframe(self, output_path):
+        """
+        Write the histogram dataframe to `output_path`
+
+        """
+        self.hist_df.to_csv(output_path, index=False)
 
     def plot_histogram(self, title=None, output_path=None):
         """
-        Plot from histograms
+        Plot histogram
 
         """
-        fig, ax = plt.subplots(1, 1, figsize=(10, 4))
 
         # Prepare labels
         @dataclass
         class GroupInfo:
             name: str  # Name of group
             n: int  # Number of reads in group
-            mu: float  # Mean of group statistic
+            # mu: float  # Mean of group statistic
             N: int  # Total reads
 
             @classmethod
-            def from_df(cls, name, df, stat, N):
-                return cls(name=name, n=df.shape[0], mu=df[stat].mean(), N=N)
+            def from_column(cls, name, df, column, N):
+
+                return cls(name=name, n=df[column].sum(), N=N)
 
             def __repr__(self):
                 return f"{self.name} ($n=${self.n}, {100*self.n/self.N:.1f}%)"
 
         labels = [
-            GroupInfo.from_df(name=name, df=gdf, stat=self.stat, N=self.N)
-            for name, gdf in self.grps
+            GroupInfo.from_column(name=c, df=self.hist_df, column=c, N=self.N)
+            for c in self.columns
         ]
 
+        fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+
         # Plot
-        self.hist_info = ax.hist(
-            [df[self.stat] for _, df in self.grps],
-            label=[str(label) for label in labels],
-            color=self.colors,
-            bins=self.bins,
-            histtype="stepfilled",
-            ls="solid",
+        ax.stackplot(
+            self.hist_df["bin_lower"],
+            self.hist_df[self.columns].transpose(),
+            labels=labels,
+            step="mid",
+            colors=self.colors,
             ec="black",
             lw=0.5,
-            stacked=True,
         )
 
         # Labels
@@ -226,7 +241,8 @@ class ReadHistogramPlotter:
             ax.xaxis.set_major_locator(plt.MultipleLocator(self.major_loc))
 
         # Legend
-        ax.legend(title="Reads", loc="upper right")
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1], title="Reads", loc="upper right")
 
         # Save
         if output_path is not None:
@@ -301,7 +317,7 @@ class JointHistogramPlotter:
             step="mid",
             colors=self.colors,
             ec="black",
-            lw=0.8,
+            lw=0.5,
         )
 
         # Labels
@@ -318,7 +334,8 @@ class JointHistogramPlotter:
             ax.xaxis.set_major_locator(plt.MultipleLocator(self.major_loc))
 
         # Legend
-        ax.legend(title="Reads", loc="upper right")
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1], title="Reads", loc="upper right")
 
         # Save
         if output_path is not None:
@@ -398,3 +415,4 @@ def barplot_states(
     if output_path is not None:
         fig.savefig(output_path, bbox_inches="tight", pad_inches=0.5, dpi=300)
         plt.close(fig)
+
