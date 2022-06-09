@@ -85,6 +85,7 @@ def target_extraction_overview(expt_dir, config):
             sample_ids=plot_df["sample_id"],
             gene_names=plot_df["gene_name"],
             values=plot_df["reads_mapped"],
+            sample_id_order=params["metadata"]["sample_id"].values
         )
         plotter.set_gene_color_pal("Spectral")
         plotter.plot(

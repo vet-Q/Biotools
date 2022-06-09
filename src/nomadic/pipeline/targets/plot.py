@@ -86,7 +86,7 @@ class BalancePlotter:
 
     scale_size = 0.25
 
-    def __init__(self, sample_ids, gene_names, values):
+    def __init__(self, sample_ids, gene_names, values, sample_id_order=None):
         """
         Plot a statistics `values` across `sample_ids` and `genes`
 
@@ -106,6 +106,9 @@ class BalancePlotter:
         # sample_ids
         self.unique_sample_ids = np.unique(self.sample_ids)
         self.n_sample_ids = self.unique_sample_ids.shape[0]
+        if sample_id_order is not None: # optionally set order of IDs
+            assert all([s in self.unique_sample_ids for s in sample_id_order])
+            self.unique_sample_ids = np.array(sample_id_order)
         # gene_names
         self.unique_gene_names = np.unique(self.gene_names)
         self.n_gene_names = self.unique_gene_names.shape[0]
