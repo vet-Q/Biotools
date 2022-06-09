@@ -32,7 +32,7 @@ def load_gff(gff_path):
         end: int
         score: str
         strand: str
-        phase: int
+        phase: str
         attributes: str
 
     # Iterate over rows in gff, load entries
@@ -44,8 +44,13 @@ def load_gff(gff_path):
             fields = record.strip().split("\t")
             entry = gffEntry(*fields)
             entries.append(entry)
+    
+    # Enforce data types
+    gff = pd.DataFrame(entries)
+    gff["start"] = gff["start"].astype("int")
+    gff["end"] = gff["end"].astype("int")
 
-    return pd.DataFrame(entries)
+    return gff
 
 
 def extract_gff_attribute(gff_df, extract):
