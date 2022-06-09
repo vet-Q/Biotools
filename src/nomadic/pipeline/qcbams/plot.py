@@ -382,9 +382,18 @@ def barplot_states(
     ax.grid(axis="x", ls="dotted", alpha=0.5)
 
     # Ticks
-    ax.xaxis.set_major_formatter(
-        plt.FuncFormatter(lambda val, _: f"{int(val/(10**pwr))}")
+    def get_spacing(spacings, max_val, max_ticks=8):
+        for spacing in spacings:
+            ticks = np.arange(0, max_val + spacing, spacing)
+            if len(ticks) < max_ticks:
+                break
+        return spacing
+    spacing = get_spacing(
+        spacings=np.array([1, 2, 5, 10, 20, 50])*10**pwr,
+        max_val=df.sum(1).max()
     )
+    ax.xaxis.set_major_locator(plt.MultipleLocator(spacing))
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda val, _: f"{int(val/(10**pwr))}"))
 
     # Labels
     ax.set_xlabel(f"No. Reads [$x10^{pwr}]$")
