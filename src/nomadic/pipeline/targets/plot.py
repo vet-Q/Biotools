@@ -157,7 +157,7 @@ class BalancePlotter:
             zip(self.unique_gene_names, sns.color_palette(pal, self.n_gene_names))
         )
 
-    def plot(self, output_path=None):
+    def plot(self, show_imb_factor=True, output_path=None):
         """
         Create the balance plot
 
@@ -194,6 +194,24 @@ class BalancePlotter:
         # Ticks
         ax.grid(ls="dotted", axis="x", zorder=-10)
         ax.axvline(x=100, color="black", zorder=-10)
+
+        # Optionally annotate with imbalance factors
+        if show_imb_factor:
+            imb_factors = {
+                sample_id: sdf["value"].max()/(sdf["value"].min()+1)
+                for sample_id, sdf in self.df.groupby("sample_id")
+            }
+            print(imb_factors)
+            print(self.df)
+            for sample_id, imb_factor in imb_factors.items():
+                ax.annotate(
+                    xy=(ax.get_xlim()[1], self.id_to_pos[sample_id]),
+                    xycoords="data",
+                    ha="left",
+                    va="center",
+                    color="black",
+                    text=f"  {imb_factor:.0f}x",
+                )
 
         # Delineate barcodes
         improve_delin = True
