@@ -10,7 +10,7 @@ class MutationPanelPlot:
     lw = 0.5
 
     # Point sizes
-    pass_size = 60
+    pass_size = 80
     fail_size = 20
 
     # Scaling
