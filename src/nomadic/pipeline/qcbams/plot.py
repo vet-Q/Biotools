@@ -405,7 +405,7 @@ def barplot_states(
     # Delineate barcodes
     if improve_delin:
         for j in range(n_barcodes)[::2]:
-            ax.axhline(j, lw=10, color="lightgrey", alpha=0.5, zorder=-10)
+            ax.axhline(j, lw=12, color="lightgrey", alpha=0.5, zorder=-10)
 
     if show_per is not None:
         ix = list(df.columns).index(show_per)
@@ -417,7 +417,7 @@ def barplot_states(
                 ha="left",
                 va="center",
                 color=show_per_color,
-                text=f"  {100*row[show_per]/row.sum():.1f}%",
+                text=f" {100*row[show_per]/row.sum():.1f}%",
             )
 
     # Save

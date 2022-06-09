@@ -201,8 +201,6 @@ class BalancePlotter:
                 sample_id: sdf["value"].max()/(sdf["value"].min()+1)
                 for sample_id, sdf in self.df.groupby("sample_id")
             }
-            print(imb_factors)
-            print(self.df)
             for sample_id, imb_factor in imb_factors.items():
                 ax.annotate(
                     xy=(ax.get_xlim()[1], self.id_to_pos[sample_id]),
@@ -210,7 +208,7 @@ class BalancePlotter:
                     ha="left",
                     va="center",
                     color="black",
-                    text=f"  {imb_factor:.0f}x",
+                    text=f" {imb_factor:.0f}x",
                 )
 
         # Delineate barcodes
@@ -218,7 +216,7 @@ class BalancePlotter:
         if improve_delin:
             for j in range(self.n_sample_ids)[::2]:
                 ax.axhline(
-                    j, lw=self.scale_size * 50, color="lightgrey", alpha=0.5, zorder=-10
+                    j, lw=12, color="lightgrey", alpha=0.5, zorder=-10
                 )
 
         # Legend
