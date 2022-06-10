@@ -9,7 +9,7 @@ from nomadic.lib.generic import produce_dir
 
 
 BARCODING_KIT_MAPPING = {
-    "native24": "EXP-NDB104 EXP-NDB114",
+    "native24": "EXP-NBD104 EXP-NBD114",
     "native96": "EXP-NBD196",
     "rapid": "SQK-RBK004",
     "pcr": "SQK-PBK004",
