@@ -1,5 +1,6 @@
 import configparser
 import pandas as pd
+from .exceptions import MetadataError
 
 
 # ================================================================
@@ -107,9 +108,18 @@ def add_metadata(args, include_unclassified=False):
     """Get metadata"""
 
     # Load metadata
-    args.metadata = pd.read_csv(f"{args.expt_dir}/{args.metadata}")
+    metadata_path = f"{args.expt_dir}/{args.metadata}"
+    args.metadata = pd.read_csv(metadata_path)
     args.barcodes = args.metadata.barcode.tolist()
     if include_unclassified:
         args.barcodes += ["unclassified"]
+
+    # Sanity checks
+    required_columns = ["sample_id", "barcode"]
+    for rc in required_columns:
+        if not rc in args.metadata.columns:
+            raise MetadataError(f"Metadata file {metadata_path} must have a {rc} column.")
+        if not len(args.metadata[rc]) == len(args.metadata[rc].unique()):
+            raise MetadataError(f"All entries in {rc} column must be unique.")
 
     return args
