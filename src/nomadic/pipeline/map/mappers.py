@@ -122,6 +122,7 @@ class BwaMem(MappingAlgorithm):
 
         """
         self.map_cmd = "bwa mem"
+        self.map_cmd += " -R @RG\tID:misc" # needed for gatk HaplotypeCaller
         self.map_cmd += f" {flags} {self.reference.fasta_path} {self.input_fastqs} |"
         self.map_cmd += " samtools view -S -b - |"
         self.map_cmd += f" samtools sort -o {output_bam}"
