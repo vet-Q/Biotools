@@ -21,7 +21,7 @@ class BasicArguments:
         self.barcode = barcode
 
 
-def build_parameter_dict(expt_dir, config, barcode):
+def build_parameter_dict(expt_dir, config, barcode=None):
     """
     Build a parameter dictionary for NOMADIC, based on the commad line inputs
 
