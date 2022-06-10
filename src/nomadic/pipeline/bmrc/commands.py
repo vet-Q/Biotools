@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import configparser
+import datetime
 from dataclasses import dataclass
 
 import click
@@ -244,6 +245,12 @@ def bmrc(expt_dir, config, pipeline_path):
     # CREATE SUBMISSION FILE
     submission_fn = f"submit_pipeline-{SUBMISSION_ID}.sh"
     with open(submission_fn, "w") as fn:
+
+        fn.write(f"# BMRC PIPELINE FOR:\n")
+        fn.write(f"#  Experiment directory: {expt_dir}\n")
+        fn.write(f"#  Config file: {config}\n")
+        fn.write(f"#  Pipeline path: {pipeline_path}\n")
+        fn.write(f"#  Generated on: {datetime.datetime.now():%Y-%m-%d %H:%M}\n\n")
 
         for script in pipeline:
 
