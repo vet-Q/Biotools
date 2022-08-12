@@ -138,7 +138,7 @@ class GffPlotter:
                 lw = 3
                 color = "darkgrey"
             elif row["feature"] == "CDS":
-                lw = 8
+                lw = 7
                 color = "teal"
                 if target_gene_id is not None and str(row["Parent"]).startswith(
                     target_gene_id
@@ -202,6 +202,16 @@ class GffPlotter:
         ax.label_outer()
 
         return None
+
+
+def offset_tick_formatter(position_bp, num_kbp_ix):
+    """
+    Plot as kbp offset from first tick
+    
+    """
+    if num_kbp_ix == 0:
+        return int(position_bp)
+    return f"+{int(num_kbp_ix)}kbp"
 
 
 # ================================================================================
@@ -298,9 +308,11 @@ def main():
 
         # GFF PLOT
         gff_plotter.plot_gff_features(ax_gff, no_axis=False, target_gene_id=target_id)
+        ax_gff.xaxis.set_major_locator(plt.LinearLocator(int(WINDOW_SIZE_BP/1000) + 1))
+        ax_gff.xaxis.set_major_formatter(plt.FuncFormatter(offset_tick_formatter))
 
         if output_path is not None:
-            fig.savefig(output_path, bbox_inches="tight", pad_inches=0.5)
+            fig.savefig(output_path, bbox_inches="tight", pad_inches=0.1)
 
         print("Done.\n")
 
