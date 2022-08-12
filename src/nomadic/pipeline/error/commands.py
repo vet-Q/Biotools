@@ -30,7 +30,7 @@ from .bed import ByProteinCodingGene
 )
 def error(expt_dir, config, barcode, approach):
     # PARSE INPUTS
-    script_descrip = "NOMADIC: Map .fastq files to Plasmodium falciparum"
+    script_descrip = "NOMADIC: Characterise all differences from the reference genome"
     t0 = print_header(script_descrip)
     script_dir = "error"
     params = build_parameter_dict(expt_dir, config, barcode)
