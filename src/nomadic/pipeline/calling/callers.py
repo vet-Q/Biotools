@@ -80,6 +80,8 @@ class BcfTools(VariantCaller):
 
     """
 
+    ANNOTATE = "FORMAT/DP,FORMAT/AD"
+
     def set_arguments(self, fasta_path):
         """
         Set any required arguments as instance variables
@@ -93,6 +95,7 @@ class BcfTools(VariantCaller):
 
         """
         cmd = "bcftools mpileup -Ou"
+        cmd += f" --annotate {self.ANNOTATE}"
         cmd += f" -f {self.fasta_path}"
         cmd += f" {self.bam_path}"
         cmd += " | bcftools call -cv"  # consensus calling
