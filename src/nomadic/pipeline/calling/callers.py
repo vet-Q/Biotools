@@ -79,7 +79,7 @@ class BcfTools(VariantCaller):
     Implementation for calling variants with `bcftools`
 
     """
-
+    MAX_DEPTH = 10_000  # we don't really want to limit this
     ANNOTATE = "FORMAT/DP,FORMAT/AD"
 
     def set_arguments(self, fasta_path):
@@ -96,6 +96,7 @@ class BcfTools(VariantCaller):
         """
         cmd = "bcftools mpileup -Ou"
         cmd += f" --annotate {self.ANNOTATE}"
+        cmd += f" --max-depth {self.MAX_DEPTH}"
         cmd += f" -f {self.fasta_path}"
         cmd += f" {self.bam_path}"
         cmd += " | bcftools call -cv"  # consensus calling
