@@ -70,11 +70,13 @@ from .search import search
 from .fasta import fasta
 from .msacall import msacall
 from .merge import merge
+from .cfhappy import cfhappy
 
 cli.add_command(search)
 cli.add_command(fasta)
 cli.add_command(msacall)
 cli.add_command(merge)
+cli.add_command(cfhappy)
 
 if __name__ == "__main__":
     cli()
