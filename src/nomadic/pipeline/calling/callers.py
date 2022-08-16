@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
@@ -163,7 +164,11 @@ class Clair3Singularity(VariantCaller):
         """
 
         # reference genome
-        self.fasta_path = fasta_path
+        self.fasta_path = os.path.abspath(fasta_path)
+
+        # paths must be absolute
+        self.bam_path = os.path.abspath(self.bam_path)
+        self.vcf_path = os.path.abspath(self.vcf_path)
 
         # clair3 outputs to a directory, not a file
         self.vcf_dir = self.vcf_path.replace(".vcf", "")
