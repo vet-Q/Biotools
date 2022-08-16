@@ -32,13 +32,13 @@ class VariantCaller(ABC):
 
     @abstractmethod
     def call_variants(self, sample_name=None):
-        """ 
+        """
         Call variants, optionally naming sample in
         output VCF file
-        
+
         """
         pass
-      
+
 
 # ================================================================
 # Concrete implementations
@@ -68,7 +68,7 @@ class LongShot(VariantCaller):
         cmd += f" --bam {self.bam_path}"
         cmd += f" --ref {self.fasta_path}"
         cmd += f" --out {self.vcf_path}"
-        
+
         if sample_name is not None:
             cmd += f" --sample_id {sample_name}"
 
@@ -80,6 +80,7 @@ class BcfTools(VariantCaller):
     Implementation for calling variants with `bcftools`
 
     """
+
     MAX_DEPTH = 10_000  # we don't really want to limit this
     ANNOTATE = "FORMAT/DP,FORMAT/AD"
 
@@ -104,7 +105,7 @@ class BcfTools(VariantCaller):
         cmd += f" -Ou -o {self.vcf_path}"
 
         subprocess.run(cmd, shell=True, check=True)
-        
+
         if sample_name is not None:
             bcftools_reheader(self.vcf_path, self.vcf_path, [sample_name])
 
@@ -147,31 +148,32 @@ class Clair3Singularity:
     """
     Implementation for calling variants with `clair3` via
     `singularity`
-    
+
     """
+
     SIF_PATH = "tools/clair3_latest.sif"
     THREADS = 8
     MODEL = "r941_prom_hac_g360+g422"
-    
+
     def set_arguments(self, fasta_path):
         """
         Set reference path from `fasta_path` and other necessary
         arguments
-        
+
         """
-        
+
         # reference genome
         self.fasta_path = fasta_path
-        
+
         # clair3 outputs to a directory, not a file
         self.vcf_dir = self.vcf_path.replace(".vcf", "")
-        
+
     def call_variants(self, sample_name=None):
         """
         Call variants with Clair3 via `singularity`
-        
+
         """
-        
+
         # Build command
         cmd = f"singularity exec {self.SIF_PATH} /opt/bin/run_clair3.sh"
         cmd += f" --bam_fn={self.bam_path}"
@@ -180,16 +182,18 @@ class Clair3Singularity:
         cmd += " --platform='ont'"
         cmd += f" --model_path=/opts/models/{self.MODEL}"
         cmd += f" --output {self.vcf_dir}"
-        
+
         if sample_name is not None:
             cmd += f" --sample_name {sample_name}"
-        
+
         # Run
         subprocess.run(cmd, check=True, shell=True)
-        
+
         # Move VCF file to be consistent with other variant calling methods
         shutil.copyfile(f"{self.vcf_dir}/merge_output.vcf.gz", self.vcf_path)
-        shutil.copyfile(f"{self.vcf_dir}/merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi")
+        shutil.copyfile(
+            f"{self.vcf_dir}/merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi"
+        )
 
 
 # ================================================================
@@ -202,5 +206,5 @@ caller_collection = {
     "longshot": LongShot(),
     "bcftools": BcfTools(),
     "gatk": GatkHaplotypeCaller(),
-    "clair3sing": Clair3Singularity()
+    "clair3sing": Clair3Singularity(),
 }
