@@ -144,7 +144,7 @@ class GatkHaplotypeCaller(VariantCaller):
         subprocess.run(cmd, shell=True, check=True)
 
 
-class Clair3Singularity:
+class Clair3Singularity(VariantCaller):
     """
     Implementation for calling variants with `clair3` via
     `singularity`
