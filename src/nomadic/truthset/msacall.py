@@ -5,7 +5,13 @@ import pandas as pd
 from functools import reduce
 from collections import namedtuple
 from nomadic.lib.generic import produce_dir, print_header, print_footer
-from nomadic.lib.process_vcfs import bcftools_view, bcftools_sort, bcftools_index, bcftools_concat
+from nomadic.lib.process_vcfs import (
+    bcftools_view,
+    bcftools_sort,
+    bcftools_index,
+    bcftools_concat,
+    bcftools_query_samples,
+)
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 
 
@@ -296,14 +302,14 @@ class MSAtoVCF:
     @staticmethod
     def _create_vcf_header(reference):
         """
-        Create a valid header for a VCF file, 
+        Create a valid header for a VCF file,
         including `contig` lines for the `reference`
-        
+
         """
-        
+
         # Essential format specification
         header = "##fileformat=VCFv4.2\n"
-        
+
         with open(reference.fasta_path, "r") as fasta:
             for contig in fasta:
 
@@ -318,10 +324,10 @@ class MSAtoVCF:
 
                 # Add to string
                 header += f"##contig=<ID={ID},length={length}>\n"
-            
+
         # Genotype fields
         header += "##FORMAT=<ID=GT,Number=1,Type=String,Description='Genotype'>\n"
-        
+
         return header
 
     def create_vcf(self, output_path=None):
@@ -394,6 +400,7 @@ def msacall(fasta_dir):
 
     # CALL SNPs
     vcf_dir = produce_dir(msa_dir.replace("msas", "vcfs"))
+    vcf_target_dir = produce_dir(vcf_dir, "by_target")
     print("Creating genotype VCFs...")
     vcfs_to_concat = []
     for input_msa in output_msas:
@@ -405,9 +412,7 @@ def msacall(fasta_dir):
         vcf_builder.set_reference()
 
         # Writing VCF
-        vcf_path = (
-            f"{vcf_dir}/{os.path.basename(input_msa).replace('.mafft.aln', '.snp.vcf')}"
-        )
+        vcf_path = f"{vcf_target_dir}/{os.path.basename(input_msa).replace('.mafft.aln', '.snp.vcf')}"
         print(f"  VCF written to: {vcf_path}")
         vcf_builder.create_vcf(output_path=vcf_path)
 
@@ -424,7 +429,16 @@ def msacall(fasta_dir):
     bcftools_concat(input_vcfs=vcfs_to_concat, output_vcf=target_genes_vcf)
     bcftools_index(target_genes_vcf)
 
-    print(f"Concatenated VCF written to: {target_genes_vcf}")
+    # Split to individual sample VCFs
+    samples = bcftools_query_samples(input_vcf=target_genes_vcf)
+    for sample in samples:
+        vcf_sample_path = target_genes_vcf.replace(".concat", f".{sample}.concat")
+        bcftools_view(
+            input_vcf=target_genes_vcf, output_vcf=vcf_sample_path, s=sample, O="z", dry_run=False
+        )
+        bcftools_index(vcf_sample_path)
+
+    print(f"Multi-sample concatenated VCF written to: {target_genes_vcf}")
 
     print("Done.")
     print("")
