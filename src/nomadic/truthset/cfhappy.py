@@ -6,13 +6,11 @@ from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.pipeline.cli import experiment_options, barcode_option
 from nomadic.pipeline.calling.callers import caller_collection
-
-# from nomadic.lib.process_vcfs import bcftools_view, bcftools_sort, bcftools_index, bcftools_concat
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 
 
 REFERENCE = PlasmodiumFalciparum3D7()
-QUERY_TEMP = "reads.target.DHFR.vcf"
+QUERY_SUBSTRING = "all_targets"
 
 
 # ================================================================
@@ -125,7 +123,7 @@ class HappyByDocker:
 # ================================================================
 
 
-@click.command(short_help="Call variants across targets.")
+@click.command(short_help="Comparing VCFs with hap.py.")
 @experiment_options
 @barcode_option
 @click.option(
@@ -169,6 +167,14 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, downsample):
     script_dir = f"{params['focus_barcode']}/cfhappy/{method}"
     output_dir = produce_dir(params["barcodes_dir"], script_dir)
     input_dir = output_dir.replace("cfhappy", "calling")
+    if downsample:
+        input_dir += "/downsample"
+
+    # Locate query VCFs
+    query_vcfs = [
+        f for f in os.listdir(input_dir)
+        if QUERY_SUBSTRING in f and f.endswith(".vcf.gz")
+    ]
 
     print("  Directories")
     print(f"    Input directory: {input_dir}")
@@ -177,44 +183,32 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, downsample):
     print(f"    Truth VCF: {truth_vcf}")
     print(f"    Reference FASTA: {REFERENCE.fasta_path}")
     print(f"    BED path: {bed_path}")
+    print(f"    Comparing against downsample? {downsample}")
+    print(f"    Query VCF substring: {QUERY_SUBSTRING}")
+    print(f"    No. VCFs found to compare: {len(query_vcfs)}")
     print("Done.")
     print("")
 
     # Prepare hap.py API
     print("Running hapy.py...")
     happy = HappyByDocker()
-    happy.set_arguments(
-        truth_vcf_path=truth_vcf,
-        query_vcf_path=f"{input_dir}/{QUERY_TEMP}",
-        reference_path=REFERENCE.fasta_path,
-        bed_path=bed_path,
-        output_dir=output_dir,
-        happy_prefix=QUERY_TEMP.replace(".vcf", "")
-    )
-    happy.run()
-    print("Done.")  # TODO: better way to check outputs
-    print("")
+
+    # Iterate over query VCFs
+    for query_vcf in query_vcfs:
+        print(f"  Query VCF: {query_vcf}")
+        happy.set_arguments(
+            truth_vcf_path=truth_vcf,
+            query_vcf_path=f"{input_dir}/{query_vcf}",
+            reference_path=REFERENCE.fasta_path,
+            bed_path=bed_path,
+            output_dir=output_dir,
+            happy_prefix=query_vcf.replace(".vcf", "")
+        )
+        output = happy.run()
+        print(f"  Outputs written to: {output_dir}")
+        print("Done.")  # TODO: better way to check outputs
+        print("")
 
     print_footer(t0)
 
-    # Will probably want to limit to specific barcoes at some point
-
-
-# reference = PlasmodiumFalciparum3D7()
-
-# truth_vcf = truth_vcf
-# bed_file = bed_file
-
-# if downsample:
-#     target_vcfs = [f for f in os.listdir() if f.startswith("")]
-# else:
-#     target_vcfs = [...]
-
-# happy = HappyByDocker()
-
-# for target_vcf in target_vcfs:
-
-#     happy.set_arguments(
-
-#     )
-#     happy.run()
+    
