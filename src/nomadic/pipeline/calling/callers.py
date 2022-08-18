@@ -189,6 +189,17 @@ class Clair3Singularity(VariantCaller):
         """
         Call variants with Clair3 via `singularity`
 
+        Note that Clair3 by default outputs a compressed VCF file,
+        whereas some othertools (e.g. `longshot`) will only output
+        an uncompressed VCF.
+
+        To allow these callers to be interchangeable, we need consistency
+        of VCF format across them.
+        
+        For now, converting the compressed output to uncompressed inside
+        the call; but in future might want to switch to make everything
+        compressed instead; e.g. by compressing the longshot VCF.
+
         """
 
         # Build command
@@ -210,8 +221,12 @@ class Clair3Singularity(VariantCaller):
         # Run
         subprocess.run(cmd, check=True, shell=True)
 
+        # Decompress output
+        cmd = f"bcftools view {self.vcf_dir}/merge_output.vcf.gz -Ou -o merge_output.vcf"
+        subprocess.run(cmd, check=True, shell=True)
+
         # Move VCF file to be consistent with other variant calling methods
-        shutil.copyfile(f"{self.vcf_dir}/merge_output.vcf.gz", self.vcf_path)
+        shutil.copyfile(f"{self.vcf_dir}/merge_output.vcf", self.vcf_path)
         shutil.copyfile(
             f"{self.vcf_dir}/merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi"
         )
