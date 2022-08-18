@@ -153,7 +153,8 @@ class Clair3Singularity(VariantCaller):
     """
 
     SIF_PATH = "tools/clair3_latest.sif"
-    THREADS = 8
+    BIND_DIRS = True
+    THREADS = "4"
     MODEL = "r941_prom_hac_g360+g422"
 
     def set_arguments(self, fasta_path):
@@ -173,6 +174,17 @@ class Clair3Singularity(VariantCaller):
         # clair3 outputs to a directory, not a file
         self.vcf_dir = self.vcf_path.replace(".vcf", "")
 
+        # Create if doesn't exist, helps with mounting (-B)
+        if not os.path.exists(self.vcf_dir):
+            os.makedirs(self.vcf_dir)
+
+        # Collect directories
+        self.dirs = [
+            os.path.dirname(self.bam_path),
+            os.path.dirname(self.fasta_path),
+            self.vcf_dir,
+        ]
+
     def call_variants(self, sample_name=None):
         """
         Call variants with Clair3 via `singularity`
@@ -180,16 +192,20 @@ class Clair3Singularity(VariantCaller):
         """
 
         # Build command
-        cmd = f"singularity exec {self.SIF_PATH} /opt/bin/run_clair3.sh"
+        cmd = f"singularity exec"
+        if self.BIND_DIRS:
+            cmd += f" {' '.join([f'-B {d}' for d in self.dirs])}"
+        cmd += f" {self.SIF_PATH} /opt/bin/run_clair3.sh"
         cmd += f" --bam_fn={self.bam_path}"
         cmd += f" --ref_fn={self.fasta_path}"
         cmd += f" --threads={self.THREADS}"
         cmd += " --platform='ont'"
-        cmd += f" --model_path=/opts/models/{self.MODEL}"
+        cmd += f" --model_path=/opt/models/{self.MODEL}"
         cmd += f" --output {self.vcf_dir}"
+        cmd += " --include_all_ctgs"
 
         if sample_name is not None:
-            cmd += f" --sample_name {sample_name}"
+            cmd += f" --sample_name={sample_name}"
 
         # Run
         subprocess.run(cmd, check=True, shell=True)
