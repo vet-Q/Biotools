@@ -195,7 +195,7 @@ class Clair3Singularity(VariantCaller):
 
         To allow these callers to be interchangeable, we need consistency
         of VCF format across them.
-        
+
         For now, converting the compressed output to uncompressed inside
         the call; but in future might want to switch to make everything
         compressed instead; e.g. by compressing the longshot VCF.
@@ -222,7 +222,7 @@ class Clair3Singularity(VariantCaller):
         subprocess.run(cmd, check=True, shell=True)
 
         # Decompress output
-        cmd = f"bcftools view {self.vcf_dir}/merge_output.vcf.gz -Ou -o merge_output.vcf"
+        cmd = f"bcftools view {self.vcf_dir}/merge_output.vcf.gz -Ou -o {self.vcf_dir}/merge_output.vcf"
         subprocess.run(cmd, check=True, shell=True)
 
         # Move VCF file to be consistent with other variant calling methods
