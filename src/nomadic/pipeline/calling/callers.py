@@ -252,6 +252,7 @@ class DeepVariantSingularity(VariantCaller):
 
         # clair3 outputs to a directory, not a file
         self.vcf_dir = self.vcf_path.replace(".vcf", "")
+        self.vcf_prefix = os.path.basename(self.vcf_dir)
 
         # Create if doesn't exist, helps with mounting (-B)
         if not os.path.exists(self.vcf_dir):
@@ -279,7 +280,7 @@ class DeepVariantSingularity(VariantCaller):
         cmd += f" -f {self.fasta_path}"
         cmd += f" -t {self.THREADS}"
         cmd += f" -o {self.vcf_dir}"
-        cmd += f" -p {os.path.basename(self.vcf_path).replace('.gz', '').replace('.vcf', '')}"
+        cmd += f" -p {self.vcf_prefix}"
         cmd += f" --{self.MODEL}"
 
         if sample_name is not None:
@@ -290,9 +291,13 @@ class DeepVariantSingularity(VariantCaller):
 
         # The next two step is for consistency with other callers
         # Decompress output
-        if not os.path.exists(self.vcf_path):
-            cmd = f"bcftools view {self.vcf_path}.gz -Ou -o {self.vcf_path}"
-            subprocess.run(cmd, check=True, shell=True)
+        cmd = f"bcftools view {self.vcf_dir}/{self.vcf_prefix}.vcf.gz -Ou -o {self.vcf_path}"
+        subprocess.run(cmd, check=True, shell=True)
+
+        # Move VCF index file
+        shutil.copyfile(
+            f"{self.vcf_dir}/{self.vcf_prefix}.vcf.gz.tbi", f"{self.vcf_path}.tbi"
+        )
 
 
 # ================================================================
