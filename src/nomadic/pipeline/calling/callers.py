@@ -223,6 +223,78 @@ class Clair3Singularity(VariantCaller):
         )
 
 
+class DeepVariantSingularity(VariantCaller):
+    """
+    Call variants with PEPPER-Margin-DeepVariant via singularity
+
+    """
+
+    SIF_PATH = "tools/pepper_deepvariant_r0.8.sif"
+    BIND_DIRS = True
+    THREADS = "4"
+    MODEL = "ont_r9_guppy5_sup"  # All that is available
+
+    def set_arguments(self, fasta_path):
+        """
+        Set arguments for PEPPER-Margin-DeepVariant
+
+        Note that all paths must be absolute; and any directories that
+        do not exist should be created before binding.
+
+        """
+
+        # reference genome
+        self.fasta_path = os.path.abspath(fasta_path)
+
+        # paths must be absolute
+        self.bam_path = os.path.abspath(self.bam_path)
+        self.vcf_path = os.path.abspath(self.vcf_path)
+
+        # clair3 outputs to a directory, not a file
+        self.vcf_dir = self.vcf_path.replace(".vcf", "")
+
+        # Create if doesn't exist, helps with mounting (-B)
+        if not os.path.exists(self.vcf_dir):
+            os.makedirs(self.vcf_dir)
+
+        # Collect directories
+        self.dirs = [
+            os.path.dirname(self.bam_path),
+            os.path.dirname(self.fasta_path),
+            self.vcf_dir,
+        ]
+
+    def call_variants(self, sample_name=None):
+        """
+        Call variants with PEPPER-Margin-DeepVariant
+
+        """
+
+        # Build command
+        cmd = f"singularity exec"
+        if self.BIND_DIRS:
+            cmd += f" {' '.join([f'-B {d}' for d in self.dirs])}"
+        cmd += f" {self.SIF_PATH} run_pepper_margin_deepvariant call_variant"
+        cmd += f" -b {self.bam_path}"
+        cmd += f" -f {self.fasta_path}"
+        cmd += f" -t {self.THREADS}"
+        cmd += f" -o {self.vcf_dir}"
+        cmd += f" -p {os.path.basename(self.vcf_path).replace('.gz', '').replace('.vcf', '')}"
+        cmd += f" --{self.MODEL}"
+
+        if sample_name is not None:
+            cmd += f" -s {sample_name}"
+
+        # Run
+        subprocess.run(cmd, check=True, shell=True)
+
+        # The next two step is for consistency with other callers
+        # Decompress output
+        if not os.path.exists(self.vcf_path):
+            cmd = f"bcftools view {self.vcf_path}.gz -Ou -o {self.vcf_path}"
+            subprocess.run(cmd, check=True, shell=True)
+
+
 # ================================================================
 # Define collection of available callers
 #
@@ -234,4 +306,5 @@ caller_collection = {
     "bcftools": BcfTools(),
     "gatk": GatkHaplotypeCaller(),
     "clair3sing": Clair3Singularity(),
+    "deepvarsing": DeepVariantSingularity(),
 }
