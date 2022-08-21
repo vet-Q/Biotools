@@ -90,7 +90,7 @@ class HappyByDocker:
             self.output_dir,
         ]
 
-    def run(self):
+    def run(self, stratification=None):
         """
         Run hap.py via Docker
 
@@ -108,6 +108,8 @@ class HappyByDocker:
         cmd += f" -o {self.output_dir}/{self.output_prefix}"
         cmd += " --engine=vcfeval"
         cmd += f" --threads {self.threads}"
+        if stratification is not None:
+            cmd += f"  --stratification {os.path.abspath(stratification)}"
 
         # Run
         output = self.client.containers.run(
@@ -149,9 +151,17 @@ class HappyByDocker:
     " all variants in `truth_vcf` will be considered true positives.",
 )
 @click.option(
+    "-s",
+    "--stratification",
+    type=click.Path(),
+    required=False,
+    default=None,
+    help="Path to TSV file for stratifications."
+)
+@click.option(
     "--downsample", is_flag=True, help="Produce an overview across all barcodes."
 )
-def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, downsample):
+def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratification, downsample):
     """
     Run a comparison with `hap.py` for a specific `barcode` and `method` from an
     `expt_dir` against a `truth_vcf`
@@ -183,6 +193,8 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, downsample):
     print(f"    Truth VCF: {truth_vcf}")
     print(f"    Reference FASTA: {REFERENCE.fasta_path}")
     print(f"    BED path: {bed_path}")
+    if stratification is not None:
+        print(f"    Stratifications TSV: {stratification}")
     print(f"    Comparing against downsample? {downsample}")
     print(f"    Query VCF substring: {QUERY_SUBSTRING}")
     print(f"    No. VCFs found to compare: {len(query_vcfs)}")
@@ -204,11 +216,10 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, downsample):
             output_dir=output_dir,
             happy_prefix=query_vcf.replace(".vcf", "")
         )
-        output = happy.run()
+        output = happy.run(stratification=stratification)
         print(f"  Outputs written to: {output_dir}")
         print("Done.")  # TODO: better way to check outputs
         print("")
 
     print_footer(t0)
 
-    
