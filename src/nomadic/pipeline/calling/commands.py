@@ -21,7 +21,7 @@ from .downsample import BamDownSampler
     help="Variant calling method to use.",
 )
 @click.option(
-    "--downsample", is_flag=True, help="Produce an overview across all barcodes."
+    "--downsample", is_flag=True, help="Downsample BAM before calling."
 )
 @click.option(
     "-r",
