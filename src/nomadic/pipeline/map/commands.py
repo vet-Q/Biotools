@@ -79,7 +79,7 @@ def map(expt_dir, config, barcode, algorithm):
 
             # Map
             print("Mapping...")
-            mapper.map_from_fastqs(fastq_dir)
+            mapper.map_from_fastqs(fastq_dir=fastq_dir)
             mapper.run(output_bam)
 
             # Index

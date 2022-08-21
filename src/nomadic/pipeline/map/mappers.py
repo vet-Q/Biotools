@@ -34,18 +34,24 @@ class MappingAlgorithm(ABC):
         self.remap_cmd = f"samtools view -f 0x004 {input_bam}"
         self.remap_cmd += " | samtools fastq | "
 
-    def map_from_fastqs(self, fastq_dir):
+    def map_from_fastqs(self, fastq_dir=None, fastq_path=None):
         """
         Prepare to map all .fastq files found in a directory `fastq_dir`
 
         """
-        fastq_dir = fastq_dir
-        fastqs = [
-            f"{fastq_dir}/{fastq}"
-            for fastq in os.listdir(fastq_dir)
-            if fastq.endswith(".fastq") or fastq.endswith(".fastq.gz")
-        ]
-        self.input_fastqs = " ".join(fastqs)
+        if fastq_dir is not None:
+            fastq_dir = fastq_dir
+            fastqs = [
+                f"{fastq_dir}/{fastq}"
+                for fastq in os.listdir(fastq_dir)
+                if fastq.endswith(".fastq") or fastq.endswith(".fastq.gz")
+            ]
+            self.input_fastqs = " ".join(fastqs)
+        elif fastq_path is not None:
+            self.input_fastqs = fastq_path  
+        else:
+            raise ValueError("Must set either `fastq_dir` or `fastq_path`.")
+
 
     @abstractmethod
     def _define_mapping_command(self, output_bam, flags):
