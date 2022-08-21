@@ -49,7 +49,7 @@ class VariantCaller(ABC):
 
 class LongShot(VariantCaller):
     """
-    Implementation for calling variants with `longshot`
+    Encapsulate `longshot`
 
     """
 
@@ -62,7 +62,7 @@ class LongShot(VariantCaller):
 
     def call_variants(self, sample_name=None):
         """
-        Call variants
+        Call variants with `longshot`
 
         """
         cmd = "longshot -F"
@@ -78,7 +78,7 @@ class LongShot(VariantCaller):
 
 class BcfTools(VariantCaller):
     """
-    Implementation for calling variants with `bcftools`
+    Encapsulate `bcftools call`; using consensus method (`-cv`)
 
     """
 
@@ -94,7 +94,7 @@ class BcfTools(VariantCaller):
 
     def call_variants(self, sample_name=None):
         """
-        Call variants
+        Call variants with `bcftools call`
 
         """
         cmd = "bcftools mpileup -Ou"
@@ -113,7 +113,7 @@ class BcfTools(VariantCaller):
 
 class GatkHaplotypeCaller(VariantCaller):
     """
-    Implementation for calling variants with `gatk HaplotypeCaller`;
+    Encapsulate `gatk HaplotypeCaller`;
     for now, just running with default settings
 
     """
@@ -130,7 +130,7 @@ class GatkHaplotypeCaller(VariantCaller):
 
     def call_variants(self, sample_name=None):
         """
-        Call variants
+        Call variants with `gatk HaplotypeCaller`
 
         """
         cmd = ""
@@ -147,8 +147,7 @@ class GatkHaplotypeCaller(VariantCaller):
 
 class Clair3Singularity(VariantCaller):
     """
-    Implementation for calling variants with `clair3` via
-    `singularity`
+    Encapsulate Clair3; run via a singularity container
 
     """
 
@@ -159,8 +158,10 @@ class Clair3Singularity(VariantCaller):
 
     def set_arguments(self, fasta_path):
         """
-        Set reference path from `fasta_path` and other necessary
-        arguments
+        Set arguments for Clair3
+
+        Note that all paths must be absolute; and any directories that
+        do not exist should be created before binding.
 
         """
 
@@ -187,18 +188,7 @@ class Clair3Singularity(VariantCaller):
 
     def call_variants(self, sample_name=None):
         """
-        Call variants with Clair3 via `singularity`
-
-        Note that Clair3 by default outputs a compressed VCF file,
-        whereas some othertools (e.g. `longshot`) will only output
-        an uncompressed VCF.
-
-        To allow these callers to be interchangeable, we need consistency
-        of VCF format across them.
-
-        For now, converting the compressed output to uncompressed inside
-        the call; but in future might want to switch to make everything
-        compressed instead; e.g. by compressing the longshot VCF.
+        Call variants with Clair3
 
         """
 
@@ -221,11 +211,12 @@ class Clair3Singularity(VariantCaller):
         # Run
         subprocess.run(cmd, check=True, shell=True)
 
+        # The next two steps are for consistency with other callers
         # Decompress output
         cmd = f"bcftools view {self.vcf_dir}/merge_output.vcf.gz -Ou -o {self.vcf_dir}/merge_output.vcf"
         subprocess.run(cmd, check=True, shell=True)
 
-        # Move VCF file to be consistent with other variant calling methods
+        # Move VCF file
         shutil.copyfile(f"{self.vcf_dir}/merge_output.vcf", self.vcf_path)
         shutil.copyfile(
             f"{self.vcf_dir}/merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi"
