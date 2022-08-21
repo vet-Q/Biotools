@@ -32,7 +32,7 @@ ONLY_PASS = True  # only demultiplex .fastq that pass guppy quality control
     "--basecalling_method",
     type=click.Choice(BASECALL_METHODS),
     default="hac",
-    help="Basecalling method, high accuracy or fast.",
+    help="Basecalling method; super, high or fast accuracy.",
 )
 def basecall(expt_dir, basecalling_method):
     """
@@ -75,7 +75,7 @@ def basecall(expt_dir, basecalling_method):
     "--basecalling_method",
     type=click.Choice(BASECALL_METHODS),
     default="hac",
-    help="Basecalling method, high accuracy or fast.",
+    help="Basecalling method; super, high or fast accuracy.",
 )
 @click.option(
     "-k",
