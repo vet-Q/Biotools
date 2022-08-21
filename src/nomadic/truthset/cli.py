@@ -69,12 +69,14 @@ def cli():
 from .search import search
 from .fasta import fasta
 from .msacall import msacall
+from .mapcall import mapcall
 from .merge import merge
 from .cfhappy import cfhappy
 
 cli.add_command(search)
 cli.add_command(fasta)
 cli.add_command(msacall)
+cli.add_command(mapcall)
 cli.add_command(merge)
 cli.add_command(cfhappy)
 
