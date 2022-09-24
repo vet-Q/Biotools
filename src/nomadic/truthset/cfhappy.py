@@ -1,4 +1,5 @@
 import os
+import subprocess
 import docker
 import click
 
@@ -114,9 +115,7 @@ class HappyByDocker:
 
             stratification_dir = os.path.dirname(stratification_path)
             if stratification_dir not in self.dirs:
-                self.volumes.append(
-                    f"{stratification_dir}:{stratification_dir}"
-                )
+                self.volumes.append(f"{stratification_dir}:{stratification_dir}")
 
         # Run
         output = self.client.containers.run(
@@ -124,6 +123,110 @@ class HappyByDocker:
         )
 
         return output
+
+
+class HappyBySingularity:
+
+    SIF_PATH = "tools/hap.py_v0.3.12.sif"
+    SIF_CMD = "/opt/hap.py/bin/hap.py"
+    BIND_DIRS = True
+
+    def __init__(self):
+        pass
+
+    def set_arguments(
+        self,
+        truth_vcf_path,
+        query_vcf_path,
+        reference_path,
+        bed_path,
+        output_dir,
+        threads=6,
+        happy_prefix="happy.out",
+    ):
+        """
+        Set arguments required to run hap.py
+
+        Paths are partitioned into directory and file name to allow
+        for mounting
+
+        """
+
+        # TRUTH VCF
+        self.truth_vcf_path = os.path.abspath(truth_vcf_path)
+        self.truth_vcf_dir = os.path.dirname(self.truth_vcf_path)
+        self.truth_vcf_fn = os.path.basename(self.truth_vcf_path)
+
+        # QUERY VCF
+        self.query_vcf_path = os.path.abspath(query_vcf_path)
+        self.query_vcf_dir = os.path.dirname(self.query_vcf_path)
+        self.query_vcf_fn = os.path.basename(self.query_vcf_path)
+
+        # BED FILE
+        self.bed_path = os.path.abspath(bed_path)
+        self.bed_dir = os.path.dirname(self.bed_path)
+        self.bed_fn = os.path.basename(self.bed_path)
+
+        # REFERENCE FASTA
+        self.ref_path = os.path.abspath(reference_path)
+        self.ref_dir = os.path.dirname(self.ref_path)
+        self.ref_fn = os.path.basename(self.ref_path)
+
+        # OUTPUT DIRECTORY
+        self.output_dir = os.path.abspath(output_dir)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        # OUTPUT PREFIX
+        self.output_prefix = f"{happy_prefix}"
+
+        # THREADS
+        self.threads = threads
+
+        # Collect directories
+        self.dirs = [
+            self.truth_vcf_dir,
+            self.query_vcf_dir,
+            self.bed_dir,
+            self.ref_dir,
+            self.output_dir,
+        ]
+
+    def run(self, stratification=None):
+        """
+        Run hap.py via Singularity
+
+        """
+
+        # Add stratification to mounting
+        if stratification is not None:
+            stratification_path = os.path.abspath(stratification)
+            stratification_dir = os.path.dirname(stratification_path)
+            if stratification_dir not in self.dirs:
+                self.dirs.append(stratification_dir)
+
+        # Define command
+        cmd = f"singularity exec"
+        if self.BIND_DIRS:
+            cmd += f" {' '.join([f'-B {d}' for d in self.dirs])}"
+        cmd += f"{self.SIF_PATH} {self.SIF_CMD}"
+        cmd += f" {self.truth_vcf_path}"
+        cmd += f" {self.query_vcf_path}"
+        cmd += f" -r {self.ref_path}"
+        cmd += f" -f {self.bed_path}"
+        cmd += f" -o {self.output_dir}/{self.output_prefix}"
+        cmd += " --engine=vcfeval"
+        cmd += f" --threads {self.threads}"
+        if stratification is not None:
+            cmd += f"  --stratification {stratification_path}"
+
+        # Run
+        subprocess.run(cmd, check=True, shell=True)
+
+        return cmd
+
+
+happy_callers = {"docker": HappyByDocker, "singularity": HappyBySingularity}
 
 
 # ================================================================
@@ -163,12 +266,32 @@ class HappyByDocker:
     type=click.Path(),
     required=False,
     default=None,
-    help="Path to TSV file for stratifications."
+    help="Path to TSV file for stratifications.",
 )
 @click.option(
-    "--downsample", is_flag=True, help="Compare against downsampled vcfs (e.g. in /downsample)."
+    "--downsample",
+    is_flag=True,
+    help="Compare against downsampled vcfs (e.g. in /downsample).",
 )
-def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratification, downsample):
+@click.option(
+    "-h",
+    "--happy_caller",
+    type=click.Choice(happy_callers),
+    required=False,
+    default="docker",
+    help="Run hap.py by Docker or Singularity.",
+)
+def cfhappy(
+    expt_dir,
+    config,
+    barcode,
+    method,
+    truth_vcf,
+    bed_path,
+    stratification,
+    downsample,
+    happy_caller,
+):
     """
     Run a comparison with `hap.py` for a specific `barcode` and `method` from an
     `expt_dir` against a `truth_vcf`
@@ -189,7 +312,8 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratificati
 
     # Locate query VCFs
     query_vcfs = [
-        f for f in os.listdir(input_dir)
+        f
+        for f in os.listdir(input_dir)
         if QUERY_SUBSTRING in f and f.endswith(".vcf.gz")
     ]
 
@@ -210,7 +334,7 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratificati
 
     # Prepare hap.py API
     print("Running hapy.py...")
-    happy = HappyByDocker()
+    happy = happy_callers[happy_caller]
 
     # Iterate over query VCFs
     for query_vcf in query_vcfs:
@@ -221,7 +345,7 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratificati
             reference_path=REFERENCE.fasta_path,
             bed_path=bed_path,
             output_dir=output_dir,
-            happy_prefix=query_vcf.replace(".vcf", "")
+            happy_prefix=query_vcf.replace(".vcf", ""),
         )
         output = happy.run(stratification=stratification)
         print(f"  Outputs written to: {output_dir}")
@@ -229,4 +353,3 @@ def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratificati
         print("")
 
     print_footer(t0)
-
