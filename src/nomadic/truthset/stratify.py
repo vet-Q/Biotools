@@ -10,7 +10,7 @@ from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
     PlasmodiumFalciparumDd2,
     PlasmodiumFalciparumGB4,
-    PlasmodiumFalciparumHB3
+    PlasmodiumFalciparumHB3,
 )
 from nomadic.truthset.fasta import load_haplotype_from_fasta
 
@@ -21,12 +21,12 @@ from nomadic.truthset.fasta import load_haplotype_from_fasta
 # ================================================================
 
 REFERENCE_COLLECTION = {
-    r.name: r 
+    r.name: r
     for r in [
         PlasmodiumFalciparum3D7(),
         PlasmodiumFalciparumDd2(),
         PlasmodiumFalciparumGB4(),
-        PlasmodiumFalciparumHB3()
+        PlasmodiumFalciparumHB3(),
     ]
 }
 REFERENCE_NAME = "Pf3D7"
@@ -41,7 +41,7 @@ DEFAULT_OUTPUT_DIR = "resources/truthsets/stratifications"
 
 
 def write_gff_to_bed(df, bed_path, bed_columns=["seqid", "start", "end", "ID"]):
-    """ Convert from GFF to a bed """
+    """Convert from GFF to a bed"""
     sep = "\t"
     with open(bed_path, "w") as bed:
         for _, row in df.iterrows():
@@ -49,40 +49,40 @@ def write_gff_to_bed(df, bed_path, bed_columns=["seqid", "start", "end", "ID"]):
 
 
 def get_homopolymer_encoding(seq, l_max=10):
-        """
-        For a given sequence `seq`, produce a homopolymer
-        block size encoding
-        i.e.
-        ATTCCC = 1, 2, 2, 3, 3, 3
-        """
+    """
+    For a given sequence `seq`, produce a homopolymer
+    block size encoding
+    i.e.
+    ATTCCC = 1, 2, 2, 3, 3, 3
+    """
 
-        # Store
-        L = len(seq)
-        h = np.zeros(L, "int8")
-        h[:] = -1
+    # Store
+    L = len(seq)
+    h = np.zeros(L, "int8")
+    h[:] = -1
 
-        # Initialise
-        i = 0
-        p = seq[i]
-        l = 0
+    # Initialise
+    i = 0
+    p = seq[i]
+    l = 0
 
-        # Iterate
-        for c in seq:
-            if c == p:
-                l += 1
-            else:
-                h[i : (i + l)] = l
-                i += l
-                p = c
-                l = 1
+    # Iterate
+    for c in seq:
+        if c == p:
+            l += 1
+        else:
+            h[i : (i + l)] = l
+            i += l
+            p = c
+            l = 1
 
-        # Terminate
-        h[i : (i + l)] = l
-        h[h > l_max] = l_max
-        assert (h > 0).all(), "Error in homopolymer encoding."
-        assert (h <= l_max).all(), "Error in homopolymer encoding."
+    # Terminate
+    h[i : (i + l)] = l
+    h[h > l_max] = l_max
+    assert (h > 0).all(), "Error in homopolymer encoding."
+    assert (h <= l_max).all(), "Error in homopolymer encoding."
 
-        return h
+    return h
 
 
 # ================================================================
@@ -136,7 +136,9 @@ def stratify(csv_path):
 
     # CREATE MULTIPLEX BED
     print("Creating amplicon BED file...")
-    amplicon_bed_path = f"{output_dir}/{csv_name.replace('.csv', '.full_amplicons.bed')}"
+    amplicon_bed_path = (
+        f"{output_dir}/{csv_name.replace('.csv', '.full_amplicons.bed')}"
+    )
     amplicon_regions = {}
     with open(amplicon_bed_path, "w") as bed:
         for target_id, target_df in multiplex_df.groupby("target"):
@@ -149,7 +151,7 @@ def stratify(csv_path):
             start = target_df.query("direction == 'F'")["position"].values[0] - 1
             end = target_df.query("direction == 'R'")["position"].values[0]
             assert start < end
-            
+
             # Write
             line = "\t".join([chrom, str(start), str(end), target_id])
             bed.write(f"{line}\n")
@@ -172,25 +174,29 @@ def stratify(csv_path):
     print("Creating CDS-based BED files...")
     # Filter to CDS entries
     cds_df = gff_df.query("feature == 'CDS'")
-    cds_df["Parent"] = [p.split(".")[0] for p in cds_df["Parent"]] # clean
+    cds_df["Parent"] = [p.split(".")[0] for p in cds_df["Parent"]]  # clean
     target_cds_df = cds_df.query("Parent in @target_ids")
-    print(f"  Found coding sequences for {len(target_cds_df['Parent'].unique())} targets.")
+    print(
+        f"  Found coding sequences for {len(target_cds_df['Parent'].unique())} targets."
+    )
     print(f"  Totalling {target_cds_df.shape[0]} exons.")
     print("Writing...")
-    
+
     # Write
-    detailed_cds_bed_path = amplicon_bed_path.replace("full_amplicons.bed", "cds_detailed.bed")
+    detailed_cds_bed_path = amplicon_bed_path.replace(
+        "full_amplicons.bed", "cds_detailed.bed"
+    )
     write_gff_to_bed(
         df=target_cds_df,
-        bed_path=detailed_cds_bed_path, 
-        bed_columns=["seqid", "start", "end", "ID"]
+        bed_path=detailed_cds_bed_path,
+        bed_columns=["seqid", "start", "end", "ID"],
     )
     bed_files["exons"] = detailed_cds_bed_path
     cds_bed_path = amplicon_bed_path.replace("full_amplicons.bed", "cds.bed")
     write_gff_to_bed(
-            df=target_cds_df,
-            bed_path=cds_bed_path, 
-            bed_columns=["seqid", "start", "end", "Parent"]
+        df=target_cds_df,
+        bed_path=cds_bed_path,
+        bed_columns=["seqid", "start", "end", "Parent"],
     )
     bed_files["cds"] = cds_bed_path
     print(f"  By-target breakdown: {cds_bed_path}")
@@ -200,12 +206,12 @@ def stratify(csv_path):
 
     # GET SEQUENCES
     # - Iterate over regions
-    # - Compute HP encoding
-    # - Convert to BED
+    # - Compute HP encoding
+    # - Convert to BED
     # print("Loading sequences for homopolymer stratifications...")
     # for target_id, region in amplicon_regions.items():
     #     seq = load_haplotype_from_fasta(
-    #         fasta_path=reference.fasta_path, 
+    #         fasta_path=reference.fasta_path,
     #         region=region
     #     )
     #     print(f"  Target: {target_id}")
@@ -221,9 +227,5 @@ def stratify(csv_path):
         for bn, bf in bed_files.items():
             file.write(f"{bn}\t{os.path.basename(bf)}\n")
     print(f"Stratificaitons file: {stratifications_path}")
-            
+
     print_footer(t0)
-
-
-    
-
