@@ -1,28 +1,28 @@
-# Idea is to create a script
-# That creates submissions to BMRC
-# Of truthset cfhappy
-# Iterating over:
-
-# Barcodes
-# Methods
-
-# Each barcode X method combination sent to a different
-# node on the cluster
-
-# Flexible enough to be extended to OGC comparison in near future
-# How?
-# - Mapping between barcodes and truth VCFs needs to be flexible
-# - This is a simple dictionary
-# - Store as a .json
-# - With a small script to write the .json
+# Create BMRC submissions for cfhappy
+# 2022/09/24, J.Hendry
+#
+# TODO:
+# - Don't really want bmrc/bmrc_* for this; just the submission
+# - So, would want long command line argument
 
 
 import re
 import click
 import json
+import uuid
 from itertools import product
-from nomadic.pipeline.cli import experiment_options, barcode_option
-from nomadic.pipeline.bmrc.commands import BmrcScriptBuilder
+from nomadic.pipeline.cli import experiment_options
+from nomadic.truthset.cfhappy import happy_callers
+
+
+# ================================================================
+# Parameters
+#
+# ================================================================
+
+
+HAPPY_BMRC = "bmrc/configs/bmrc_cfhappy-template.sh"
+SUBMISSION_ID = str(uuid.uuid4())[:5]
 
 
 # ================================================================
@@ -56,6 +56,14 @@ from nomadic.pipeline.bmrc.commands import BmrcScriptBuilder
     " all variants in `truth_vcf` will be considered true positives.",
 )
 @click.option(
+    "-h",
+    "--happy_caller",
+    type=click.Choice(happy_callers),
+    required=False,
+    default="docker",
+    help="Run hap.py by Docker or Singularity.",
+)
+@click.option(
     "-s",
     "--stratification",
     type=click.Path(),
@@ -69,21 +77,29 @@ from nomadic.pipeline.bmrc.commands import BmrcScriptBuilder
     help="Compare against downsampled vcfs (e.g. in /downsample).",
 )
 def cfhappybmrc(
-    expt_dir, config, json_mapping, methods, bed_path, stratification=None, downsample=False
+    expt_dir,
+    config,
+    json_mapping,
+    methods,
+    bed_path,
+    happy_caller,
+    stratification=None,
+    downsample=False,
 ):
     """
     Generate a submission script for hap.py comparisons
 
     """
-
     # Parse inputs
+    print("Parsing inputs...")
     barcode_mapping = json.load(open(json_mapping, "r"))
     method_list = [m.strip() for m in methods.split(",")]
 
     # Define submission file name
-    submission_fn = "submit_happy-id.sh"
+    submission_fn = f"submit_happy-{SUBMISSION_ID}.sh"
 
     # Write submission file
+    print("Writting submission file...")
     with open(submission_fn, "w") as submit_file:
         for (barcode, truth_vcf), method in product(
             barcode_mapping.items(), method_list
@@ -93,22 +109,18 @@ def cfhappybmrc(
             barcode_int = int(re.match("^barcode([0-9]+)", barcode).group(1))
 
             # Construct command
-            cmd = "truthset cfhappy"
+            cmd = f"qsub {HAPPY_BMRC}"
             cmd += f" -e {expt_dir}"
             cmd += f" -c {config}"
             cmd += f" -m {method}"
             cmd += f" -b {barcode_int}"
             cmd += f" -t {truth_vcf}"
             cmd += f" -f {bed_path}"
+            cmd += f" -h {happy_caller}"
             if stratification is not None:
                 cmd += f" --stratification {stratification}"
             if downsample:
                 cmd += " --downsample"
-
-            # Write submission script
-            builder = BmrcScriptBuilder(
-                script=cmd,
-                job_name=f"ch-{barcode_int:02d}-{method}"
-            )
-            builder.create_bmrc_script(kwargs=None)
-            submit_file.write(builder.get_qsub_statement())
+            submit_file.write(f"{cmd}\n")
+    print(f" to: {submission_fn}")
+    print("Done.")
