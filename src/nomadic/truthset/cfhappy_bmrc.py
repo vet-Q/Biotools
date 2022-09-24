@@ -7,6 +7,7 @@
 
 
 import re
+import os
 import click
 import json
 import uuid
@@ -122,5 +123,6 @@ def cfhappybmrc(
             if downsample:
                 cmd += " --downsample"
             submit_file.write(f"{cmd}\n")
+    os.chmod(submission_fn, 0o777)
     print(f" to: {submission_fn}")
     print("Done.")
