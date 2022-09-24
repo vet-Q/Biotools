@@ -109,7 +109,14 @@ class HappyByDocker:
         cmd += " --engine=vcfeval"
         cmd += f" --threads {self.threads}"
         if stratification is not None:
-            cmd += f"  --stratification {os.path.abspath(stratification)}"
+            stratification_path = os.path.abspath(stratification)
+            cmd += f"  --stratification {stratification_path}"
+
+            stratification_dir = os.path.dirname(stratification_path)
+            if stratification_dir not in self.dirs:
+                self.volumes.append(
+                    f"{stratification_dir}:{stratification_dir}"
+                )
 
         # Run
         output = self.client.containers.run(
@@ -159,7 +166,7 @@ class HappyByDocker:
     help="Path to TSV file for stratifications."
 )
 @click.option(
-    "--downsample", is_flag=True, help="Produce an overview across all barcodes."
+    "--downsample", is_flag=True, help="Compare against downsampled vcfs (e.g. in /downsample)."
 )
 def cfhappy(expt_dir, config, barcode, method, truth_vcf, bed_path, stratification, downsample):
     """
