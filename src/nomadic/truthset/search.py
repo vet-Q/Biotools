@@ -31,6 +31,10 @@ def search_for_target_genes_by_name(gff_df, id_to_name_mapping, add_standard_id=
     """
     Reduce a GFF dataframe `gff_df` to rows that correspond to
     gene names defined in an set `id_to_name_mapping`
+
+    ISSUE:
+    - If genes missing == genes duplicated; artificially
+    looks like you found a result for each gene
     
     param:
         gff_df: DataFrame
@@ -47,6 +51,7 @@ def search_for_target_genes_by_name(gff_df, id_to_name_mapping, add_standard_id=
     
     # Search for individual targets
     target_rows = []
+    target_counts = {}
     for target_id, target_names in id_to_name_mapping.items():
         
         r = gff_df.query("name in @target_names")
@@ -55,17 +60,21 @@ def search_for_target_genes_by_name(gff_df, id_to_name_mapping, add_standard_id=
             if add_standard_id:
                 r["standard_id"] = target_id
             
+            # If we append here, means at least 1 target was found
             target_rows.append(r)
+            target_counts[target_names[0]] = r.shape[0]
         
         elif verbose:
             print(f" For ID={target_id}, no genes in {', '.join(target_names)} found.")
-            
+            target_counts[target_names[0]] = 0
             
     # Combine across targets
     target_df = pd.concat(target_rows)
             
     if verbose:
-        print(f"Total of {target_df.shape[0]}/{len(id_to_name_mapping)} targets found.")
+        print(f"Total of {len(target_rows)}/{len(id_to_name_mapping)} targets found.")
+        sep = "\n"
+        print(f"{sep.join([f'  {k:>10}: {v:<3}' for k,v in target_counts.items()])}")
         
     return target_df
 
