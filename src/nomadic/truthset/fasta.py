@@ -17,7 +17,7 @@ from nomadic.lib.references import (
 # ================================================================
 
 
-PAD_BP = 8_000
+PAD_BP = 4_000
 CSV_PATH = "resources/truthsets/table.target_genes.csv"
 
 
@@ -45,7 +45,7 @@ def load_haplotype_from_fasta(fasta_path, **kwargs):
 @click.option(
     "-g",
     "--gff_path",
-    type=str,
+    type=click.Path(),
     default=CSV_PATH,
     help="Path to .gff file of *only* targets."
 )

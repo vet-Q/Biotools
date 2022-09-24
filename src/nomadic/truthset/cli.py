@@ -72,13 +72,15 @@ from .msacall import msacall
 from .mapcall import mapcall
 from .merge import merge
 from .cfhappy import cfhappy
+from .stratify import stratify
 
 cli.add_command(search)
-cli.add_command(fasta)
+cli.add_command(fasta) 
 cli.add_command(msacall)
 cli.add_command(mapcall)
-cli.add_command(merge)
+# cli.add_command(merge) depreciated for cfhappy
 cli.add_command(cfhappy)
+cli.add_command(stratify)
 
 if __name__ == "__main__":
     cli()
