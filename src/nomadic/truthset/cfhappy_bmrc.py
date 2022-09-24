@@ -95,6 +95,13 @@ def cfhappybmrc(
     print("Parsing inputs...")
     barcode_mapping = json.load(open(json_mapping, "r"))
     method_list = [m.strip() for m in methods.split(",")]
+    print(f"  Barcode map: {json_mapping}")
+    print(f"  No. of barcodes: {len(barcode_mapping)}")
+    print(f"  Methods: {methods}")
+    print(f"  No. of methods: {len(method_list)}")
+    print(f"  No. of hap.py comparisons to make: {len(barcode_mapping)*len(method_list)}")
+    print("Done.")
+    print("")
 
     # Define submission file name
     submission_fn = f"submit_happy-{SUBMISSION_ID}.sh"
