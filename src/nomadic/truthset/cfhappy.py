@@ -334,7 +334,7 @@ def cfhappy(
 
     # Prepare hap.py API
     print("Running hapy.py...")
-    happy = happy_callers[happy_caller]
+    happy = happy_callers[happy_caller]()
 
     # Iterate over query VCFs
     for query_vcf in query_vcfs:
