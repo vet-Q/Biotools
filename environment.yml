@@ -17,6 +17,7 @@ dependencies:
   - longshot
   - mafft
   - bwa
+  - blast
   - black
   - flake8
   - pip
