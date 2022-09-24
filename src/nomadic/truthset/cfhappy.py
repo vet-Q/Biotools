@@ -209,7 +209,7 @@ class HappyBySingularity:
         cmd = f"singularity exec"
         if self.BIND_DIRS:
             cmd += f" {' '.join([f'-B {d}' for d in self.dirs])}"
-        cmd += f"{self.SIF_PATH} {self.SIF_CMD}"
+        cmd += f" {self.SIF_PATH} {self.SIF_CMD}"
         cmd += f" {self.truth_vcf_path}"
         cmd += f" {self.query_vcf_path}"
         cmd += f" -r {self.ref_path}"
