@@ -1,8 +1,8 @@
 import click
 import re
 import os
-import numpy as np
 import pandas as pd
+from collections import namedtuple
 
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.process_gffs import load_gff, add_gff_fields
@@ -35,7 +35,7 @@ DEFAULT_OUTPUT_DIR = "resources/truthsets/stratifications"
 
 
 # ================================================================
-# Functions
+# GFF output
 #
 # ================================================================
 
@@ -48,41 +48,116 @@ def write_gff_to_bed(df, bed_path, bed_columns=["seqid", "start", "end", "ID"]):
             bed.write(f"{sep.join([str(v) for v in row[bed_columns]])}\n")
 
 
-def get_homopolymer_encoding(seq, l_max=10):
+# ================================================================
+# Sequence context information
+#
+# ================================================================
+
+
+# Labelled sequence interval
+SeqInterval = namedtuple("SeqInterval", ["start", "stop", "label"])
+
+
+def get_homopolymer_intervals(seq):
     """
-    For a given sequence `seq`, produce a homopolymer
-    block size encoding
-    i.e.
-    ATTCCC = 1, 2, 2, 3, 3, 3
+    Give a nucleotide sequence `seq`, return
+    intervals (start, stop) with homopolymer length
+    indicated
+
     """
 
-    # Store
-    L = len(seq)
-    h = np.zeros(L, "int8")
-    h[:] = -1
+    # Storage
+    intervals = []
 
-    # Initialise
-    i = 0
-    p = seq[i]
-    l = 0
+    # Init
+    p = seq[0]
+    start = 0
+    stop = 1
 
     # Iterate
-    for c in seq:
-        if c == p:
-            l += 1
-        else:
-            h[i : (i + l)] = l
-            i += l
+    for c in seq[1:]:
+        if c != p:
+            intervals.append(SeqInterval(start=start, stop=stop, label=stop - start))
+            start = stop
             p = c
-            l = 1
+        stop += 1
 
     # Terminate
-    h[i : (i + l)] = l
-    h[h > l_max] = l_max
-    assert (h > 0).all(), "Error in homopolymer encoding."
-    assert (h <= l_max).all(), "Error in homopolymer encoding."
+    intervals.append(SeqInterval(start=start, stop=stop, label=stop - start))
 
-    return h
+    return intervals
+
+
+def collapse_adjacent_intervals(intervals):
+    """
+    Collapse adjacent intervals if they have the same
+    label
+
+    """
+
+    # Storage
+    collapsed_intervals = []
+
+    # Init
+    start, stop, label = intervals[0]
+
+    # Iterate
+    for interval in intervals[1:]:
+        if interval.label == label:
+            stop = interval.stop
+        else:
+            collapsed_intervals.append(SeqInterval(start, stop, label))
+            start, stop, label = interval
+
+    # Terminate
+    collapsed_intervals.append(SeqInterval(start, stop, label))
+
+    return collapsed_intervals
+
+
+def get_homopolymer_bed_df(chrom, 
+                           start,
+                           seq, 
+                           bins=[0, 3, 6, 9, 100]):
+    """
+    Create a dataframe in BED format listing
+    homopolymer length intervals
+
+    """
+
+    # Compute intervals
+    intervals = get_homopolymer_intervals(seq)
+    
+    if bins is not None:
+        # Bin the labels
+        df = pd.DataFrame(intervals)
+        df["binned_label"] = pd.cut(df["label"], bins=bins)
+
+        # hap.py doesn't handle spaces in Subsets
+        df["binned_label"] = [str(h).replace(", ", "_") for h in df["binned_label"]]
+        
+        # Change the intervals to carry the binned itervals
+        intervals = [
+            SeqInterval(start=row["start"], 
+                        stop=row["stop"],
+                        label=row["binned_label"]
+                       )
+            for _, row in df.iterrows()
+        ]
+
+    # Collapse based on intervals 
+    collapsed_intervals = collapse_adjacent_intervals(intervals)
+
+    # Convert to dataframe
+    df = pd.DataFrame(collapsed_intervals)
+    df.insert(0, "chrom", chrom)
+    df.rename({"label": "hp_length"}, axis=1, inplace=True)
+    
+    # Add starting position
+    df["start"] += start
+    df["stop"] += start
+
+    return df
 
 
 # ================================================================
@@ -103,9 +178,6 @@ def stratify(csv_path):
     """
     Create stratifications of an amplicon panel for
     hap.py comparison analysis
-
-    Steps
-
 
     """
 
@@ -143,7 +215,7 @@ def stratify(csv_path):
     with open(amplicon_bed_path, "w") as bed:
         for target_id, target_df in multiplex_df.groupby("target"):
             # Chromsome
-            pattern = "PF3D7_([0-9]){2}[0-9]+"
+            pattern = "PF3D7_([0-9]{2})[0-9]+"
             chrom_int = int(re.match(pattern, target_id).group(1))
             chrom = f"Pf3D7_{chrom_int:02d}_v3"  # NOT GENERAL!
 
@@ -204,28 +276,45 @@ def stratify(csv_path):
     print("Done.")
     print("")
 
-    # GET SEQUENCES
-    # - Iterate over regions
-    # - Compute HP encoding
-    # - Convert to BED
-    # print("Loading sequences for homopolymer stratifications...")
-    # for target_id, region in amplicon_regions.items():
-    #     seq = load_haplotype_from_fasta(
-    #         fasta_path=reference.fasta_path,
-    #         region=region
-    #     )
-    #     print(f"  Target: {target_id}")
-    #     print(f"  Sequence: {seq[:10]}...")
+    # GET SEQUENCE CONTEXT STRATIFICATIONS
+    print("Computing sequence context stratifications...")
+    bed_dfs = []
+    for target_id, region in amplicon_regions.items():
+        seq = load_haplotype_from_fasta(fasta_path=reference.fasta_path, region=region)
+        print(f"  Target: {target_id}")
+        print(f"  Region: {region}")
+        print(f"  Sequence: {seq[:10]}...")
 
-    #     # Calculate homopolymers
-    #     print("  Computing homopolymer encoding...")
-    #     hp = get_homopolymer_encoding(seq)
+        # Calculate homopolymers
+        print("  Computing homopolymer encoding...")
+        chrom, window = region.split(":")
+        start = int(window.split("-")[0])
+        bed_df = get_homopolymer_bed_df(
+            chrom=region.split(":")[0], 
+            start=start,
+            seq=seq
+        )
+
+        # Store
+        bed_dfs.append(bed_df)
+
+    # Write
+    hp_bed_path = amplicon_bed_path.replace("full_amplicons.bed", "hp_length.bed")
+    write_gff_to_bed(
+        df=pd.concat(bed_dfs),
+        bed_path=hp_bed_path,
+        bed_columns=["chrom", "start", "stop", "hp_length"],
+    )
+    bed_files["hp"] = hp_bed_path
+    print(f"  Writing to: {hp_bed_path}")
+    print("Done.")
 
     # WRITE STRATIFICATIONS FILE
     stratifications_path = f"{output_dir}/stratification.tsv"
     with open(stratifications_path, "w") as file:
         for bn, bf in bed_files.items():
             file.write(f"{bn}\t{os.path.basename(bf)}\n")
+    print("")
     print(f"Stratificaitons file: {stratifications_path}")
 
     print_footer(t0)
