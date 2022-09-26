@@ -7,6 +7,11 @@ import pandas as pd
 #
 # ================================================================
 
+def convert_to_padded_binary(val):
+    return f"{val:012b}"[::-1]
+
+def check_bit(bit_str, pos):
+    return bit_str[pos] == '1'
 
 def get_read_mapping_state(flags):
     """
@@ -24,6 +29,43 @@ def get_read_mapping_state(flags):
             read given all of its aligned segments.
 
     """
+
+    bflags = [convert_to_padded_binary(f) for f in flags]
+
+    # NB: Chimera arbitrarily dominant, given chimera and supp.
+    rules = {
+        "unmapped": any([check_bit(bf, 2) for bf in bflags]),
+        "chim_mapped": any([check_bit(bf, 11) for bf in bflags]),
+        "supp_mapped": any([check_bit(bf, 8) for bf in bflags]),
+        "uniq_mapped": True
+    }
+
+    for mapping_state, answer in rules.items():
+        if answer:
+            return mapping_state
+
+
+def get_read_mapping_state_depreciated(flags):
+    """
+    Classify a read into a given `mapping_state` given the `flags`
+    of all aligned segments associated with that read
+
+    params:
+        flags: list of ints
+            List of FLAG fields associated with aligned segments
+            belonging to a single read.
+
+    returns:
+        mapping_state: str
+            A single keyword summary of the mapping state of the
+            read given all of its aligned segments.
+
+    """
+    # Probably the best thing to do is to actually convert back to bits;
+    # then look for specific flags for each below
+    # Or can easily create an unclassified state
+
+
 
     # NB: Chimera arbitrarily dominant, given chimera and supp.
     rules = {
