@@ -71,3 +71,11 @@ def add_gff_fields(gff_df, fields=["ID", "Name", "Parent"]):
         gff_df[field] = extract_gff_attribute(gff_df, extract=field)
     
     return gff_df
+
+
+def write_gff_to_bed(df, bed_path, bed_columns=["seqid", "start", "end", "ID"]):
+    """Convert from GFF to a bed"""
+    sep = "\t"
+    with open(bed_path, "w") as bed:
+        for _, row in df.iterrows():
+            bed.write(f"{sep.join([str(v) for v in row[bed_columns]])}\n")
