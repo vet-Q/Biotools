@@ -150,13 +150,13 @@ def samtools_mpileup(input_bam, ref_fasta, target_bed, output_pileup, downsample
 
 def samtools_stats(input_bam, output_stats, view_args=None):
     """
-    Run `samtools stats` on a given `bam_file`,
+    Run `samtools stats` on a given `input_bam`,
     optionally filtering first with `samtools view`
     
     params
         input_bam : str
             Path to bam file.
-        output_fn : str
+        output_stats : str
             Path to write output file.
         view_args : str [optional]
             Arguments to pass to `samtools view`,
@@ -177,7 +177,33 @@ def samtools_stats(input_bam, output_stats, view_args=None):
     return None
 
 
+def samtools_depth(input_bam, output_path, region_bed=None):
+    """
+    Run `samtools depth` on a given `input_bam`, focussing
+    on regions defined by a `bed_file`
 
+    params
+        input_bam : str
+            Path to bam file.
+        output_path : str
+            Path to write output file.
+        region_bed : str
+            BED file defining regions over which depth
+            should be calculated. [optional]
+    
+    returns
+        None
+
+    """
+
+    cmd = "samtools depth"
+    cmd += " -aa" # output all positions
+    cmd += f" -b {region_bed}"
+    cmd += f" -o {output_path}"
+    cmd += f" {input_bam}"
+    subprocess.run(cmd, shell=True, check=True)
+
+    return None
 
 
 # ================================================================================ #
