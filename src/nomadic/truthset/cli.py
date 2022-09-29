@@ -70,7 +70,6 @@ from .search import search
 from .fasta import fasta
 from .msacall import msacall
 from .mapcall import mapcall
-from .merge import merge
 from .cfhappy import cfhappy
 from .stratify import stratify
 from .cfhappy_bmrc import cfhappybmrc
