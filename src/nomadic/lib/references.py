@@ -200,17 +200,34 @@ class ReferenceDownloader:
         else:
             print("Already downloaded.")
 
-            
+
+# ================================================================
+# Reference collection
+#
+# ================================================================
+
+
+references = [
+    PlasmodiumFalciparum3D7(),
+    PlasmodiumFalciparumDd2(),
+    PlasmodiumFalciparumHB3(),
+    PlasmodiumFalciparumGB4(),
+    PlasmodiumOvale(),
+    PlasmodiumMalariae(),
+    HomoSapiens()
+]
+reference_collection = {
+    ref.name: ref for ref in references
+}
+
+
+# ================================================================
+# Download references, if run as a script
+#
+# ================================================================
+
+
 if __name__ == "__main__":
-    references = [
-        PlasmodiumFalciparum3D7(),
-        PlasmodiumFalciparumDd2(),
-        PlasmodiumFalciparumHB3(),
-        PlasmodiumFalciparumGB4(),
-        PlasmodiumOvale(),
-        PlasmodiumMalariae(),
-        HomoSapiens()
-    ]
     downloader = ReferenceDownloader()
     for r in references:
         print(f"Downloading: {r.name}")
