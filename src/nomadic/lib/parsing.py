@@ -1,3 +1,4 @@
+import os
 import configparser
 import pandas as pd
 from .exceptions import MetadataError
@@ -80,7 +81,9 @@ def add_config(args):
     # [Mutations]
     if config.has_section("Mutations"):
         mutations = config.get("Mutations", "csv")
-        args.mutations = pd.read_csv(mutations)
+        # path assumed relative to config file
+        mutations_path = f"{os.path.dirname(args.config)}/{mutations}"
+        args.mutations = pd.read_csv(mutations_path)
         args.mutation_dt = {
             target: gdf["mutation"].tolist()
             for target, gdf in args.mutations.groupby("target")
