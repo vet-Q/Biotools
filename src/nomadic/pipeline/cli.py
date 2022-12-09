@@ -91,6 +91,10 @@ from .bmrc.commands import bmrc
 
 cli.add_command(bmrc)
 
+from .coi.cli import coi
+
+cli.add_command(coi)
+
 
 if __name__ == "__main__":
     cli()

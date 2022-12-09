@@ -1,6 +1,7 @@
 import click
 from nomadic.pipeline.cli import cli
 from .trim.commands import trim
+from .panmap.commands import panmap
 
 
 @cli.group()
@@ -12,3 +13,4 @@ def coi():
     pass
 
 coi.add_command(trim)
+coi.add_command(panmap)
