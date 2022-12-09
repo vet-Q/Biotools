@@ -16,13 +16,13 @@ from .mappers import Minimap2PAF
 
 def main(expt_dir, config, barcode, target_gene):
     """
-    Filter and trim all reads in a BAM file to overlap a `target_gene` 
-    and span `start` and `end` positions; then convert to FASTQ
+    Map reads for a given target gene to a panel of
+    P.f. strains
     
     """
 
     # PARSE INPUTS
-    script_descrip = "NOMADIC: Trim target BAM file for COI analysis"
+    script_descrip = "NOMADIC: Map reads from a target gene to a panel of P.f. strains."
     t0 = print_header(script_descrip)
     script_dir = "coi"
     params = build_parameter_dict(expt_dir, config, barcode)
