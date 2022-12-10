@@ -1,9 +1,8 @@
-import os
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import seaborn as sns
-
+import networkx as nx
 
 from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
@@ -15,6 +14,11 @@ from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.pipeline.coi.trim.targets import TARGET_COLLECTION
 
+
+# --------------------------------------------------------------------------------
+# PAF io
+#
+# --------------------------------------------------------------------------------
 
 # Load PAF
 def load_paf(paf_path: str) -> pd.DataFrame:
@@ -43,6 +47,12 @@ def load_paf(paf_path: str) -> pd.DataFrame:
     paf_df["identity"] = paf_df["n_matches_alignment"] / paf_df["n_bases_alignment"]
     
     return paf_df
+
+
+# --------------------------------------------------------------------------------
+# Read length plots
+#
+# --------------------------------------------------------------------------------
 
 
 # From to Plasmodb
@@ -121,6 +131,94 @@ def plot_target_histogram(read_df,
     if output_path is not None:
         fig.savefig(output_path, dpi=300, pad_inches=0.5, bbox_inches="tight")
         plt.close(fig)
+
+
+# --------------------------------------------------------------------------------
+# Network plots
+#
+# --------------------------------------------------------------------------------
+
+
+def plot_identity_network(
+    overlap_df,
+    read_df,
+    references,
+    identity_threshold=0.5,
+    output_path=None
+):
+    
+    # Create a linkage dataframe
+    link_df = overlap_df.query(f"identity > {identity_threshold}")
+
+    # Remove duplicates
+    link_df = link_df.sort_values("identity", ascending=False)
+    link_df.drop_duplicates(subset=["query_name", "target_name"], inplace=True)
+    
+    # Create a graph object
+    G = nx.from_pandas_edgelist(
+        link_df,
+        "query_name",
+        "target_name",
+        create_using=nx.Graph()
+    )
+
+    # Create a reproducible positioning
+    pos = nx.spring_layout(G, seed=42)
+    
+    # Prepare node annotation
+    read_df.index = read_df["read_id"]
+
+    # Colors
+    ref_cols = dict(zip([r.name for r in references], sns.color_palette("Set1", len(references))))
+
+    # Scale size by quality
+    node_colors = [
+        ref_cols[read_df.loc[n]["highest_identity_ref"]]
+        for n in list(G.nodes)
+    ]
+    node_sizes = [
+        read_df.loc[n]["med_qual"]
+        for n in list(G.nodes)
+    ]
+    
+    # Produce plot
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    nx.draw(
+        G, 
+        pos,
+        node_size=node_sizes, 
+        node_color=node_colors,
+        edge_color="lightgrey",
+        width=0.25,
+        ax=ax,
+    )
+
+    # Nodes
+    ax.collections[0].set_edgecolor("black")
+    ax.collections[0].set_linewidth(0.5)
+
+    # Edges
+    ax.collections[1].set_alpha(0.25)
+    
+    # Legend
+    handles = [Line2D([0], [0], marker='o', mec="black", mew=0.25, color=col, lw=0, label=ref)
+               for ref, col in ref_cols.items()]
+    ax.legend(title="Highest Similarity",
+              handles=handles, bbox_to_anchor=(1, 1), loc="upper left", frameon=False)
+    
+    if output_path is not None:
+        fig.savefig(output_path,
+                    dpi=300, 
+                    pad_inches=0.5,
+                    bbox_inches="tight")
+        plt.close(fig)
+
+
+
+# --------------------------------------------------------------------------------
+# Main script
+#
+# --------------------------------------------------------------------------------
 
 
 def main(expt_dir, config, barcode, target_gene):
@@ -215,7 +313,13 @@ def main(expt_dir, config, barcode, target_gene):
         )
         read_df.insert(0, "barcode", barcode)
 
+        # Load pairwise overlap information
+        overlap_df = load_paf(f"{coi_dir}/overlap/reads.overlap.{target_gene}.paf")
+
+
+        # PLOTTING
         # Plot read length histogram
+        print("Plotting read lengths...")
         plot_target_histogram(
             read_df, 
             target_gene, 
@@ -224,6 +328,14 @@ def main(expt_dir, config, barcode, target_gene):
             output_path=f"{plot_dir}/plot.read_lengths.{target_gene}.pdf")
 
 
+        # Identity network
+        print("Plotting identity network...")
+        plot_identity_network(
+            overlap_df, 
+            read_df, 
+            references, 
+            output_path=f"{plot_dir}/plot.identity_network.{target_gene}.pdf"
+        )
 
     print_footer(t0)
 
