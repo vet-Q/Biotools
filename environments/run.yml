@@ -14,11 +14,10 @@ dependencies:
   - jupyter
   - scipy=1.4
   - seaborn
+  - click
   - longshot
   - mafft
   - bwa
   - blast
-  - black
-  - flake8
   - pip
   - docker-py

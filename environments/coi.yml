@@ -1,0 +1,27 @@
+name: nomadic2-coi
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.7
+  - minimap2
+  - samtools
+  - bcftools
+  - htslib
+  - bedtools
+  - pysam
+  - scikit-allel
+  - jupyter
+  - scipy=1.4
+  - seaborn
+  - longshot
+  - mafft
+  - bwa
+  - blast
+  - black
+  - flake8
+  - pip
+  - docker-py
+  - numba
+  - networkx
+  - graph-tool
