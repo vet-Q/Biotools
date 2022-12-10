@@ -4,6 +4,7 @@ from .trim.commands import trim
 from .panmap.commands import panmap
 from .overlap.commands import overlap
 from .align.commands import align
+from .plot.commands import plot
 
 
 @cli.group()
@@ -18,3 +19,4 @@ coi.add_command(trim)
 coi.add_command(panmap)
 coi.add_command(overlap)
 coi.add_command(align)
+coi.add_command(plot)
