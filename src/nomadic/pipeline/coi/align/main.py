@@ -5,7 +5,6 @@ from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_fastqs import load_fastq_reads
 from ..trim.targets import TARGET_COLLECTION
-#from .fastq_io import load_fastq_reads
 from .aligners import NeedlemanWunschNumbaBanded
 
 
