@@ -1,6 +1,7 @@
 import click
 from ..trim.targets import TARGET_COLLECTION
 from .main import main
+from .overview import plot_overview
 from nomadic.pipeline.cli import experiment_options, barcode_option
 
 
@@ -14,7 +15,10 @@ from nomadic.pipeline.cli import experiment_options, barcode_option
     default="MSP2",
     help="Trim mapped reads to this target gene."
 )
-def plot(expt_dir, config, barcode, target_gene):
+@click.option(
+    "--overview", is_flag=True, help="Produce an overview across all barcodes."
+)
+def plot(expt_dir, config, barcode, target_gene, overview):
     """
     Plot results of COI analyses.
 
@@ -22,4 +26,8 @@ def plot(expt_dir, config, barcode, target_gene):
     `align` first.
     
     """
-    main(expt_dir, config, barcode, target_gene)
+
+    if overview:
+        plot_overview(expt_dir, config, target_gene)
+    else:
+        main(expt_dir, config, barcode, target_gene)

@@ -120,6 +120,7 @@ def plot_target_histogram(read_df,
     # Save
     if output_path is not None:
         fig.savefig(output_path, dpi=300, pad_inches=0.5, bbox_inches="tight")
+        plt.close(fig)
 
 
 def main(expt_dir, config, barcode, target_gene):
@@ -130,7 +131,7 @@ def main(expt_dir, config, barcode, target_gene):
     """
 
     # PARSE INPUTS
-    script_descrip = "NOMADIC: Trim target BAM file for COI analysis"
+    script_descrip = "NOMADIC: Plot results of COI analysis"
     t0 = print_header(script_descrip)
     script_dir = "coi"
     params = build_parameter_dict(expt_dir, config, barcode)
@@ -177,11 +178,23 @@ def main(expt_dir, config, barcode, target_gene):
         # Load Panmap dataframes
         panmap_dfs = []
         for r in references:
+            
+            # Load
             input_paf = f"{coi_dir}/panmap/{barcode}.{r.name}.{target_gene}.sorted.paf"
             paf_df = load_paf(input_paf)
             paf_df.insert(0, "barcode", barcode)
             paf_df.insert(1, "reference", r.name)
+            
+            # Remove duplicate mappings, if they exist
+            # retaining highest MAPQ
+            if paf_df["query_name"].duplicated().any():
+                paf_df.sort_values(["query_name", "mapq"], ascending=False, inplace=True)
+                paf_df.drop_duplicates("query_name", inplace=True)
+            
+            # Store
             panmap_dfs.append(paf_df)
+            
+        # Combine
         panmap_df = pd.concat(panmap_dfs)
 
         # Merge in highest identity across panel mapping
@@ -194,11 +207,13 @@ def main(expt_dir, config, barcode, target_gene):
         highest_identity_ref = panmap_wide_df.idxmax(axis=1)
         highest_identity_ref.name = "highest_identity_ref"
 
-        read_df = pd.merge(left=read_df, 
-                        right=highest_identity_ref,
-                        left_on="read_id",
-                        right_index=True
-                        )
+        read_df = pd.merge(
+            left=read_df, 
+            right=highest_identity_ref,
+            left_on="read_id",
+            right_index=True
+        )
+        read_df.insert(0, "barcode", barcode)
 
         # Plot read length histogram
         plot_target_histogram(
@@ -207,6 +222,8 @@ def main(expt_dir, config, barcode, target_gene):
             references,
             palette="Set1",
             output_path=f"{plot_dir}/plot.read_lengths.{target_gene}.pdf")
+
+
 
     print_footer(t0)
 

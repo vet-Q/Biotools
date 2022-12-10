@@ -150,7 +150,8 @@ def clip_bam_to_fastq(
     output_fastq,
     chrom, 
     start, 
-    end):
+    end, 
+    min_length=500):
     """
     Clip alignments in a BAM file based on a region defined
     by a chromosome, start and end position
@@ -163,6 +164,9 @@ def clip_bam_to_fastq(
 
                 # Extract clipped sequence and qualities
                 clipped_seq, clipped_qual = clip_alignment(alignment, chrom, start, end)
+
+                if len(clipped_seq) < min_length:
+                    continue
 
                 # Write
                 record =  f"@{alignment.query_name}\n"
