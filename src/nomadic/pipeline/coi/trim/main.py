@@ -12,6 +12,7 @@ import numpy as np
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.lib.process_bams import samtools_index, bedtools_intersect
+from nomadic.lib.process_fastqs import load_fastq_read_info
 from .targets import TARGET_COLLECTION
 
 
@@ -255,6 +256,11 @@ def main(expt_dir, config, barcode, target_gene):
             start=target.start,
             end=target.end
         )
+        print("Done.\n")
+
+        print("Writing read information summary CSV...")
+        read_df = load_fastq_read_info(fastq_path)
+        read_df.to_csv(fastq_path.replace(".fastq", ".csv"), index=False)
         print("Done.\n")
     print("Done.\n")
 

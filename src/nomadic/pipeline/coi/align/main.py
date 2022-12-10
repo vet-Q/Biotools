@@ -3,8 +3,9 @@ import pandas as pd
 
 from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.lib.parsing import build_parameter_dict
+from nomadic.lib.process_fastqs import load_fastq_reads
 from ..trim.targets import TARGET_COLLECTION
-from .fastq_io import load_fastq_reads
+#from .fastq_io import load_fastq_reads
 from .aligners import NeedlemanWunschNumbaBanded
 
 
@@ -72,7 +73,7 @@ def main(expt_dir, config, barcode, target_gene, max_reads=MAX_READS):
             if i % 100 == 0:
                 print(f"Completed first {i} reads...")
 
-        read_names = [r.name for r in reads]
+        read_names = [r.read_id for r in reads]
         score_df = pd.DataFrame(
             scores,
             index=read_names,
