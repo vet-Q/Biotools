@@ -1,10 +1,13 @@
 import numpy as np
 from abc import ABC, abstractmethod
-#from numba import njit
+from numba import njit
 
 # TODO:
 # - These were all done v. quickly and need refactoring
 # - Aligning on AA level would be ~10X faster, but error is compounded
+# - DOES _align() GET COMPILED FOR EVERY CLASS INSTANCE....?
+#   - If so, need to refactor to only instantiate once
+#   - Probably should just do that...
 
 # --------------------------------------------------------------------------------
 # Base class for performing pairwise sequence alignment
@@ -13,7 +16,7 @@ from abc import ABC, abstractmethod
 
 
 class PairwiseAligner(ABC):
-    def __init__(self, x, y):
+    def set_sequences(self, x, y):
         self.x = x
         self.y = y
         self.n = len(x)
@@ -160,7 +163,7 @@ class NeedlemanWunschNumba(PairwiseAligner):
     
 
     @staticmethod
-    #@njit
+    @njit
     def _align(n, m, x, y, match_score, mismatch_score, gap_penalty):
         """
         Pairwise alignment with Numba
@@ -225,7 +228,7 @@ class NeedlemanWunschNumbaBanded(PairwiseAligner):
         self.MISMATCH_SCORE = -3
         self.GAP_SCORE = -4  # linear score
         
-    def align(self, band_radius=50):
+    def align(self, band_radius=40):
         """
         Wrapper for Numba implementation
 
@@ -247,7 +250,7 @@ class NeedlemanWunschNumbaBanded(PairwiseAligner):
         self.score = score
     
     @staticmethod
-    #@njit
+    @njit
     def _align(n, m, x, y, match_score, mismatch_score, gap_penalty, band_radius): 
         """
         Pairwise alignment with Numba
@@ -304,4 +307,16 @@ class NeedlemanWunschNumbaBanded(PairwiseAligner):
         score = F[i, j]
         
         return score
+
+# --------------------------------------------------------------------------------
+# Collection
+#
+# --------------------------------------------------------------------------------
+
+
+ALIGNER_COLLECTION = {
+    "needleman": NeedlemanWunsch,
+    "needleman_numba": NeedlemanWunschNumba,
+    "needleman_numba_banded": NeedlemanWunschNumbaBanded
+}
 

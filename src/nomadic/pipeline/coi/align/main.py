@@ -1,3 +1,4 @@
+import datetime
 import numpy as np
 import pandas as pd
 
@@ -5,13 +6,10 @@ from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.process_fastqs import load_fastq_reads
 from ..trim.targets import TARGET_COLLECTION
-from .aligners import NeedlemanWunschNumbaBanded
+from .aligners import ALIGNER_COLLECTION
 
 
-MAX_READS = 10
-
-
-def main(expt_dir, config, barcode, target_gene, max_reads=MAX_READS):
+def main(expt_dir, config, barcode, target_gene, max_reads, algorithm):
 
     # PARSE INPUTS
     script_descrip = "NOMADIC: Map reads from a target gene to a panel of P.f. strains."
@@ -20,11 +18,13 @@ def main(expt_dir, config, barcode, target_gene, max_reads=MAX_READS):
     params = build_parameter_dict(expt_dir, config, barcode)
 
     target = TARGET_COLLECTION[target_gene]
+    aligner = ALIGNER_COLLECTION[algorithm]()
     print("User inputs:")
     print(f"  Target: {target.name}")
     print(f"  Chrom: {target.chrom}")
     print(f"  Start: {target.start}")
     print(f"  End: {target.end}")
+    print(f"  Alignment algorithm: {algorithm}")
     print("Done.\n")
 
     # Focus on a single barcode, if specified
@@ -37,6 +37,8 @@ def main(expt_dir, config, barcode, target_gene, max_reads=MAX_READS):
         print("." * 80)
         print(f"Barcode: {barcode}")
         print("." * 80)
+
+        bt0 = datetime.datetime.now().replace(microsecond=0)
 
         # DIRECTORIES
         coi_dir = produce_dir(params["barcodes_dir"], barcode, script_dir)
@@ -60,7 +62,7 @@ def main(expt_dir, config, barcode, target_gene, max_reads=MAX_READS):
         scores = np.zeros((n_reads, n_reads))
         for i in range(n_reads):
             for j in range(i, n_reads):
-                aligner = NeedlemanWunschNumbaBanded(
+                aligner.set_sequences(
                     x=reads[i].seq, 
                     y=reads[j].seq
                 )
@@ -79,5 +81,8 @@ def main(expt_dir, config, barcode, target_gene, max_reads=MAX_READS):
             columns=read_names
         )
         score_df.to_csv(f"{output_dir}/pairwise_scores.{target_gene}.csv")
+
+        bt1 = datetime.datetime.now().replace(microsecond=0)
+        print("Time Elapsed: %s" % (bt1 - bt0))
     
     print_footer(t0)
