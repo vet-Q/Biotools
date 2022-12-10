@@ -47,7 +47,7 @@ def calc_percent_gc(seq: str) -> float:
     """ Calculate GC percentage of a sequece """
     N = len(seq)
     n_gc = len([nt for nt in seq if nt in ["G", "C"]])
-    return 100*n_gc/N
+    return 100*n_gc/N if N > 0 else 0.0
 
 
 def convert_ascii_to_quals(ascii_quals: str) -> np.ndarray:
