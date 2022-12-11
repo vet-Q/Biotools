@@ -16,6 +16,15 @@ from nomadic.pipeline.coi.trim.targets import TARGET_COLLECTION
 
 
 # --------------------------------------------------------------------------------
+# Settings
+#
+# --------------------------------------------------------------------------------
+
+
+NETWORK_IDENTITY_THRESHOLD = 0.7
+
+
+# --------------------------------------------------------------------------------
 # PAF io
 #
 # --------------------------------------------------------------------------------
@@ -157,7 +166,7 @@ def plot_identity_network(
     overlap_df,
     read_df,
     references,
-    identity_threshold=0.9,
+    identity_threshold=NETWORK_IDENTITY_THRESHOLD,
     output_path=None
 ):
     
@@ -348,7 +357,8 @@ def main(expt_dir, config, barcode, target_gene):
             overlap_df, 
             read_df, 
             references, 
-            output_path=f"{plot_dir}/plot.identity_network.{target_gene}.pdf"
+            identity_threshold=NETWORK_IDENTITY_THRESHOLD,
+            output_path=f"{plot_dir}/plot.identity_network.{target_gene}.idn{100*NETWORK_IDENTITY_THRESHOLD:.0f}per.pdf"
         )
 
     print_footer(t0)
