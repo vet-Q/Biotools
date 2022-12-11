@@ -5,9 +5,6 @@ from numba import njit
 # TODO:
 # - These were all done v. quickly and need refactoring
 # - Aligning on AA level would be ~10X faster, but error is compounded
-# - DOES _align() GET COMPILED FOR EVERY CLASS INSTANCE....?
-#   - If so, need to refactor to only instantiate once
-#   - Probably should just do that...
 
 # --------------------------------------------------------------------------------
 # Base class for performing pairwise sequence alignment
