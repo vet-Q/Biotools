@@ -62,6 +62,18 @@ EXPECTED_SIZES = {
         "PfDd2": 296 * 3,
         "PfGB4": 292 * 3,
         "PfHB3": 256 * 3
+    },
+    "CSP": {
+        "Pf3D7": 397 * 3,
+        "PfDd2": 428 * 3,
+        "PfGB4": 385 * 3,
+        "PfHB3": 408 * 3
+    },
+    "AMA1": {
+        "Pf3D7": 622 * 3,
+        "PfDd2": 622 * 3,
+        "PfGB4": 622 * 3,
+        "PfHB3": 622 * 3
     }
 }
 
@@ -108,8 +120,10 @@ def plot_target_histogram(read_df,
 
     # Ticks and grid
     ax.set_axisbelow(True)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(50))
-    ax.xaxis.set_minor_locator(plt.MultipleLocator(10))
+    start, end = ax.get_xlim()
+    minorx, majorx = (50, 100) if (end - start) < 1200 else (50, 200)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(majorx))
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(minorx))
     ax.grid(ls='dotted', alpha=0.5)
 
     plot_expected=True
@@ -143,7 +157,7 @@ def plot_identity_network(
     overlap_df,
     read_df,
     references,
-    identity_threshold=0.5,
+    identity_threshold=0.9,
     output_path=None
 ):
     

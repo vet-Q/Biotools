@@ -128,14 +128,22 @@ def plot_overview(expt_dir, config, target_gene):
     ax.set_xlabel("ORF Read Length (bp)")
 
     # Limits
-    #ax.set_xlim((650, 1000))
+    if target_gene == "CSP":
+        ax.set_xlim((800, 1600))
 
-    # Grid
+    # Ticks and grid
     ax.set_axisbelow(True)
-    ax.xaxis.set_minor_locator(plt.MultipleLocator(50))
-    ax.xaxis.set_major_locator(plt.MultipleLocator(100))
-    ax.grid(axis='x', which='minor', ls='dotted')
-    ax.grid(axis='x', which='major', ls='dashed')
+    start, end = ax.get_xlim()
+    minorx, majorx = (50, 100) if (end - start) < 1200 else (50, 200)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(majorx))
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(minorx))
+    ax.grid(ls='dotted', alpha=0.5)
+
+    # Delineate barcodes
+    improve_delin=True
+    if improve_delin:
+        for j in range(n_barcodes)[::2]:
+            ax.axhline(j, lw=12, color="lightgrey", alpha=0.5, zorder=-10)
 
     # Legend
     ax.legend(
