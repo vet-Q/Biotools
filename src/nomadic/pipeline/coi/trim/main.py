@@ -243,7 +243,7 @@ def main(expt_dir, config, barcode, target_gene):
             input_bam=bam_complete_path,
             filtered_bam=bam_filtered_path,
             min_read_length=2000,
-            max_read_length=4000
+            max_read_length=4000  # No amplicons exceed 4kbp
         )
         samtools_index(bam_filtered_path)
         print("Done.\n")
@@ -253,12 +253,15 @@ def main(expt_dir, config, barcode, target_gene):
         fastq_path = f"{fastq_dir}/reads.target.{target_gene}.clipped.fastq"
 
         print("Clipping and converting to FASTQ...")
+        BUFFER_BP = 400  # If you are 400bp shorter than expected over ORF, exclude
+        MIN_READ_LENGTH = target.end - target.start - BUFFER_BP
         clip_bam_to_fastq(
             input_bam=bam_filtered_path,
             output_fastq=fastq_path,
             chrom=target.chrom,
             start=target.start,
-            end=target.end
+            end=target.end,
+            min_length=MIN_READ_LENGTH,
         )
         print("Done.\n")
 
