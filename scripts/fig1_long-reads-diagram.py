@@ -19,6 +19,18 @@ from nomadic.lib.statistics import (
     get_array_encoding,
 )
 
+
+# --------------------------------------------------------------------------------
+# Aesthetic parameters
+#
+# --------------------------------------------------------------------------------
+
+
+
+
+
+
+
 # --------------------------------------------------------------------------------
 # Data loading
 #
@@ -66,7 +78,7 @@ class GffPlotter:
 
     gff_features = ["protein_coding_gene", "CDS"]
 
-    def __init__(self, gff, chrom, start, end):
+    def __init__(self, gff, chrom, start, end, amplicon_region=None):
         """
         Plot information from a GFF over a defined
         region
@@ -76,6 +88,7 @@ class GffPlotter:
         self.chrom = chrom
         self.start = start
         self.end = end
+        self.amplicon_region=amplicon_region
 
         self.plot_gff = self._get_relevant_gff()
 
@@ -97,11 +110,21 @@ class GffPlotter:
 
         return plot_gff
 
-    def plot_gff_features(self, ax, no_axis=False, target_gene_id=None):
+    def plot_gff_features(self, 
+                          ax, 
+                          no_axis=False, 
+                          target_gene_id=None
+                         ):
         """Plot features of gff in this region"""
 
-        PLUS_STRAND_Y = 3 / 4
+        PLUS_STRAND_Y = 2 / 4
         NEG_STRAND_Y = 1 / 4
+        
+        
+        DNA_COLOR = "lightgrey"
+        ORF_COLOR = "dimgrey"
+        GENE_COLOR = "silver"
+        TARGET_COLOR = "teal"
 
         # Plot features
         for _, row in self.plot_gff.iterrows():
@@ -109,14 +132,14 @@ class GffPlotter:
             # Define color and size from feature
             if row["feature"] == "protein_coding_gene":
                 lw = 3
-                color = "darkgrey"
+                color = GENE_COLOR
             elif row["feature"] == "CDS":
                 lw = 8
-                color = "teal"
+                color = ORF_COLOR
                 if target_gene_id is not None and str(row["Parent"]).startswith(
                     target_gene_id
                 ):
-                    color = "darkorange"
+                    color = TARGET_COLOR
 
             # Define y position from strand
             if row["strand"] == "+":
@@ -134,7 +157,7 @@ class GffPlotter:
             [self.start, self.end],
             [PLUS_STRAND_Y, PLUS_STRAND_Y],
             lw=1,
-            color="lightgrey",
+            color=DNA_COLOR,
             zorder=-10,
         )
         ax.annotate(
@@ -151,7 +174,7 @@ class GffPlotter:
             [self.start, self.end],
             [NEG_STRAND_Y, NEG_STRAND_Y],
             lw=1,
-            color="lightgrey",
+            color=DNA_COLOR,
             zorder=-10,
         )
         ax.annotate(
@@ -162,6 +185,19 @@ class GffPlotter:
             fontsize=8,
             text=" ($-$)",
         )
+        
+        if self.amplicon_region is not None:
+            chrom, interval = self.amplicon_region.split(":")
+            start, end = interval.split("-")
+            start = int(start)
+            end = int(end)
+            
+            ax.plot([start, end],
+                    [3/4, 3/4],
+                    color='red',
+                    lw=4
+                   )
+            
 
         # Clean axis ticks
         if no_axis:
@@ -179,6 +215,12 @@ class GffPlotter:
 
 
 class SequencePlotter:
+
+    # Colors
+    AT_PER_COL = "steelblue"
+    HP_LENGTH_COL = "firebrick"
+    SEQ_COMP_PALETTE = "Greens" 
+
     def __init__(self, seq):
         """
         Plot various summary statistics of a nucleotide sequennce
@@ -204,7 +246,7 @@ class SequencePlotter:
         """
         # Plot
         ax.imshow(
-            self.seq_array, cmap="Blues", aspect="auto", extent=(start, end, 3.5, -0.5)
+            self.seq_array, cmap=self.SEQ_COMP_PALETTE, aspect="auto", extent=(start, end, 3.5, -0.5)
         )
 
         # Ticks
@@ -224,15 +266,12 @@ class SequencePlotter:
 
         """
 
-        HP_COL = "firebrick"
-        GC_COL = "forestgreen"
-
         # Define x values
         xs = np.arange(start, end)
 
         # Homopolymers
-        ax.plot(xs, self.hp_runs, lw=1, color=HP_COL, label="Homopolymer Length (bp)")
-        ax.set_ylabel("Homopolymer \nLength (bp)", color=HP_COL)
+        ax.plot(xs, self.hp_runs, lw=1, color=self.HP_LENGTH_COL, label="Homopolymer Length (bp)")
+        ax.set_ylabel("Homopolymer \nLength (bp)", color=self.HP_LENGTH_COL)
 
         # Limits
         ax.set_ylim((1, ax.get_ylim()[1]))
@@ -251,11 +290,11 @@ class SequencePlotter:
             y1=0,
             y2=100 * (1 - self.per_gc),
             alpha=0.5,
-            color=GC_COL,
+            color=self.AT_PER_COL,
             label="% AT",
         )
         axm.set_ylim(ax.get_ylim()[0], 100)
-        axm.set_ylabel("AT (%)\n[20bp sliding average]", color=GC_COL)
+        axm.set_ylabel("AT (%)\n[20bp sliding average]", color=self.AT_PER_COL)
 
         # Ticks
         axm.yaxis.set_major_locator(plt.MultipleLocator(20))
@@ -281,7 +320,7 @@ class PrimerPlotter:
         self.n_grps = len(self.grps)
         self.group_names = list(self.grps.groups.keys())
 
-    def _set_colors(self, cmap="Greys"):
+    def _set_colors(self, cmap="Reds"):
         self.col_dt = dict(zip(self.group_names, sns.color_palette(cmap, self.n_grps)))
 
     def plot(self, ax, start, end, no_axis=False):
@@ -349,6 +388,10 @@ class PrimerPlotter:
 
 
 class CoverageLengthPlotter:
+
+    # Colors
+    READ_LENGTH_PALETTE = "Spectral_r"
+
     def __init__(self, bam_path):
         """
         Plot a coverage distribution from a `bam_path`
@@ -380,13 +423,18 @@ class CoverageLengthPlotter:
         """
         dfs = []
         for _, row in self.bam_df.iterrows():
-            position = np.arange(row["ref_start"], row["ref_end"] + 1)
-            length = np.repeat(row["query_alignment_length"], position.shape[0])
+            try:
+                position = np.arange(row["ref_start"], row["ref_end"] + 1)
+                length = np.repeat(row["query_alignment_length"], position.shape[0])
+            except ValueError:
+                print("This row FAILED!")
+                print(row)
+                continue
             dfs.append(pd.DataFrame({"position": position, "length": length}))
         positional_df = pd.concat(dfs)
         return positional_df
 
-    def calc_readlength_summary(self, max_bp=5000, intv_bp=1000, cmap="Spectral_r"):
+    def calc_readlength_summary(self, max_bp=5000, intv_bp=1000):
         """
         Create a dataframe summarising read lengths overlapping
         each position
@@ -413,7 +461,7 @@ class CoverageLengthPlotter:
         )
         
         # Define colors from binns
-        cols = sns.color_palette(cmap, len(bin_cats))
+        cols = sns.color_palette(self.READ_LENGTH_PALETTE, len(bin_cats))
         self.bin_col = dict(zip(bin_cats, cols))
 
 
@@ -438,7 +486,7 @@ class CoverageLengthPlotter:
                 x=positions,
                 y1=last_count,
                 y2=last_count + counts,
-                zorder=-ix,
+                zorder=+ix,
                 clip_on=False,
                 color=self.bin_col[name],
                 label=f"{np.abs(name.left):.0f}",
@@ -450,6 +498,12 @@ class CoverageLengthPlotter:
         # Limits
         ax.set_xlim(start, end)
         ax.set_ylim((0, ax.get_ylim()[1]))
+        
+        # Ticks
+        ax.set_axisbelow(True)
+        # ax.yaxis.set_major_locator(plt.MultipleLocator(50))
+        # ax.yaxis.set_minor_locator(plt.MultipleLocator(10))
+        # ax.grid(axis='y', which='major', ls='dotted')
 
         # Labels
         ax.set_xlabel("Position (bp)")
@@ -495,10 +549,10 @@ class CombinedPlotter:
                 24,
                 partial(self.coverage_plotter.plot, start=start, end=end, include_legend=True),
             ),
-            AxesFrame(
-                "primer", 2, partial(self.primer_plotter.plot, start=start, end=end, no_axis=True)
-            ),
-            AxesFrame("genes", 6, partial(self.gff_plotter.plot_gff_features, no_axis=True)),
+            # AxesFrame(
+            #     "primer", 2, partial(self.primer_plotter.plot, start=start, end=end, no_axis=True)
+            # ),
+            AxesFrame("genes", 8, partial(self.gff_plotter.plot_gff_features, no_axis=True)),
             AxesFrame(
                 "complexity",
                 16,
@@ -544,7 +598,7 @@ class CombinedPlotter:
 
         # Optionally write
         if output_path is not None:
-            fig.savefig(output_path, bbox_inches="tight", pad_inches=0.5)
+            fig.savefig(output_path, bbox_inches="tight", pad_inches=0.5, dpi=300)
 
 
 # --------------------------------------------------------------------------------
@@ -559,7 +613,8 @@ class CombinedPlotter:
     "--bam_path",
     default=None,
     required=True,
-    help="BAM to use for coverage plot.",
+    help="BAM to use for coverage plot."
+    "Should consist of mapped reads ONLY; i.e. from target-extraction."
 )
 @click.option(
     "-i",
@@ -675,7 +730,13 @@ def main(
 
     # INSTANTIATE INDIVIDUAL PLOTTERS
     # Gene format file
-    gff_plotter = GffPlotter(gff=gff, chrom=chrom, start=window_start, end=window_end)
+    target_region = f"{target_info['seqname']}:{target_info['start']}-{target_info['end']}"
+    gff_plotter = GffPlotter(
+        gff=gff, 
+        chrom=chrom, 
+        start=window_start, 
+        end=window_end, 
+        amplicon_region=target_region)
 
     # Coverage
     coverage_plotter = CoverageLengthPlotter(bam_path=bam_path)
