@@ -87,7 +87,7 @@ def target_extraction_overview(expt_dir, config):
             values=plot_df["reads_mapped"],
             sample_id_order=params["metadata"]["sample_id"].values
         )
-        plotter.set_gene_color_pal("Spectral")
+        plotter.set_gene_color_pal("Spectral")  # HERE
         plotter.plot(
             output_path=f"{output_dir}/plot.reads_mapped.stripplot.{overlap_type}.pdf"
         )

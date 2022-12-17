@@ -85,6 +85,30 @@ def plot_dataframe_heat(
 class BalancePlotter:
 
     scale_size = 0.25
+    
+    NOMADS8_ORDER = [
+        "CRT1",
+        "DHFR",
+        "DHPS",
+        "K13",
+        "MDR1",
+        "MSP2",
+        "PMI",
+        "PMIII"
+    ]
+    NOMADS8_COLS = sns.color_palette("viridis", 8)   
+    
+    NOMADS16_ORDER = NOMADS8_ORDER + [
+        "AMA1",
+        "CSP",
+        "HRP2up",
+        "HRP2",
+        "HRP2dwn",
+        "HRP3up",
+        "HRP3",
+        "HRP3dwn"
+    ]
+    NOMADS16_COLS = NOMADS8_COLS + sns.color_palette("inferno", 8)
 
     def __init__(self, sample_ids, gene_names, values, sample_id_order=None):
         """
@@ -148,14 +172,21 @@ class BalancePlotter:
 
         return y
 
-    def set_gene_color_pal(self, pal):
+    def set_gene_color_pal(self, pal, nomads_panel=True):
         """
         Set color palette for the genes
 
         """
+        # Generic approach
         self.gene_col = dict(
             zip(self.unique_gene_names, sns.color_palette(pal, self.n_gene_names))
         )
+        
+        # Hacky approach to quickly get colors for manuscript
+        if nomads_panel and self.n_gene_names == 8:
+            self.gene_col = dict(zip(self.NOMADS8_ORDER, self.NOMADS8_COLS))
+        elif nomads_panel and self.n_gene_names == 16:
+            self.gene_col = dict(zip(self.NOMADS16_ORDER, self.NOMADS16_COLS))
 
     def plot(self, show_imb_factor=True, output_path=None):
         """
