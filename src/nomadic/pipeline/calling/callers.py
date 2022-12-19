@@ -204,6 +204,7 @@ class Clair3Singularity(VariantCaller):
         cmd += f" --model_path=/opt/models/{self.MODEL}"
         cmd += f" --output {self.vcf_dir}"
         cmd += " --include_all_ctgs"
+        cmd += " --enable_phasing"
 
         if sample_name is not None:
             cmd += f" --sample_name={sample_name}"
@@ -213,13 +214,13 @@ class Clair3Singularity(VariantCaller):
 
         # The next two steps are for consistency with other callers
         # Decompress output
-        cmd = f"bcftools view {self.vcf_dir}/merge_output.vcf.gz -Ou -o {self.vcf_dir}/merge_output.vcf"
+        cmd = f"bcftools view {self.vcf_dir}/phased_merge_output.vcf.gz -Ou -o {self.vcf_dir}/phased_merge_output.vcf"
         subprocess.run(cmd, check=True, shell=True)
 
         # Move VCF file
-        shutil.copyfile(f"{self.vcf_dir}/merge_output.vcf", self.vcf_path)
+        shutil.copyfile(f"{self.vcf_dir}/phased_merge_output.vcf", self.vcf_path)
         shutil.copyfile(
-            f"{self.vcf_dir}/merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi"
+            f"{self.vcf_dir}/phased_merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi"
         )
 
 
