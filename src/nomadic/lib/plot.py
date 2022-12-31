@@ -8,6 +8,12 @@ import matplotlib.pyplot as plt
 
 
 class SequencePlotter:
+
+    # Colors
+    AT_PER_COL = "steelblue"
+    HP_LENGTH_COL = "firebrick"
+    SEQ_COMP_PALETTE = "Greens"
+
     def __init__(self, seq):
         """
         Plot various summary statistics of a nucleotide sequennce
@@ -33,7 +39,7 @@ class SequencePlotter:
         """
         # Plot
         ax.imshow(
-            self.seq_array, cmap="Blues", aspect="auto", extent=(start, end, 3.5, -0.5)
+            self.seq_array, cmap=self.SEQ_COMP_PALETTE, aspect="auto", extent=(start, end, 3.5, -0.5)
         )
 
         # Ticks
@@ -53,38 +59,77 @@ class SequencePlotter:
 
         """
 
-        HP_COL = "firebrick"
-        GC_COL = "forestgreen"
-
         # Define x values
         xs = np.arange(start, end)
 
-        # Homopolymers
-        ax.plot(xs, self.hp_runs, lw=1, color=HP_COL, label="Homopolymer Length (bp)")
-        ax.set_ylabel("Homopolymer \nLength (bp)", color=HP_COL)
-
-        # Limits
-        ax.set_ylim((1, ax.get_ylim()[1]))
-        ax.set_xlim(start, end)
-
-        # GC
-        ax.patch.set_visible(False)
-        axm = ax.twinx()
-        axm.set_zorder(ax.get_zorder() - 1)
-        axm.fill_between(
+        # ----------------------------------------
+        # A+T (%) PLOT
+        ax.fill_between(
             x=xs,
             y1=0,
             y2=100 * (1 - self.per_gc),
             alpha=0.5,
-            color=GC_COL,
+            color=self.AT_PER_COL,
             label="% AT",
         )
-        axm.set_ylim(ax.get_ylim()[0], 100)
-        axm.set_ylabel("AT (%)\n[20bp sliding average]", color=GC_COL)
+        # Limits
+        ax.set_xlim(start, end)
+        ax.set_ylim(0, 100)
+        # Labels
+        lab = "AT (%)"
+        #lab += "\n[20bp sliding average]"
+        ax.set_ylabel("AT (%)", color=self.AT_PER_COL)
+        # Ticks
+        ax.yaxis.set_major_locator(plt.MultipleLocator(20))
+        ax.yaxis.set_minor_locator(plt.MultipleLocator(10))
+
+        # ----------------------------------------
+        # Homopolymer Plot
+        # Twin
+        axm = ax.twinx()
+        # Plot
+        axm.plot(xs, self.hp_runs, lw=1, color=self.HP_LENGTH_COL, label="Homopolymer Length (bp)")
+        # Limits
+        axm.set_xlim(start, end)
+        axm.set_ylim(1, 45)
+        # Labels
+        axm.set_ylabel("Homopolymer \nLength (bp)", color=self.HP_LENGTH_COL)
+        # Ticks
+        axm.yaxis.set_major_locator(plt.MultipleLocator(10))
+        axm.yaxis.set_minor_locator(plt.MultipleLocator(5))
 
         # Clean axis
         axm.xaxis.set_visible(False)
         plt.setp(ax.get_xticklabels(), visible=False)
+
+     
+
+        # # Homopolymers
+        # ax.plot(xs, self.hp_runs, lw=1, color=self.HP_LENGTH_COL, label="Homopolymer Length (bp)")
+        # ax.set_ylabel("Homopolymer \nLength (bp)", color=self.HP_LENGTH_COL)
+
+        # # Limits
+        # ax.set_ylim((1, ax.get_ylim()[1]))
+        # ax.set_xlim(start, end)
+
+        # # GC
+        # ax.patch.set_visible(False)
+        # axm = ax.twinx()
+        # axm.set_zorder(ax.get_zorder() - 1)
+        # axm.fill_between(
+        #     x=xs,
+        #     y1=0,
+        #     y2=100 * (1 - self.per_gc),
+        #     alpha=0.5,
+        #     color=self.AT_PER_COL,
+        #     label="% AT",
+        # )
+        # axm.set_ylim(ax.get_ylim()[0], 100)
+        # axm.set_ylabel("AT (%)\n[20bp sliding average]", color=self.AT_PER_COL)
+
+        # # Clean axis
+        # axm.xaxis.set_visible(False)
+        # plt.setp(ax.get_xticklabels(), visible=False)
 
 
 class GffPlotter:
