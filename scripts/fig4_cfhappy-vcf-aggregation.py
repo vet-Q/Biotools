@@ -174,18 +174,18 @@ def main(expt: str, config: str, barcodes: List[str], method: str) -> None:
             vcf_dfs.append(vcf_df)
 
     # Create final output directory
-    assert len(vcf_dfs) == (80 * len(barcodes))
+    #assert len(vcf_dfs) == (80 * len(barcodes))
     combined_vcf_df = pd.concat(vcf_dfs)
 
     # Write
     combined_vcf_df.to_csv(
-        f"summary_tables/fig4_aggregated-vcfs-{method}.csv", index=False
+        f"summary_tables/{os.path.basename(params['expt_dir'])}/sup/fig4_aggregated-vcfs-{method}.csv", index=False
     )
 
 
 if __name__ == "__main__":
     expt = "experiments/2021-11-14_strain-validation-flongle-lfb"
-    config = "configs/guppy-hac-se.ini"
+    config = "configs/guppy-sup-se.ini"
     barcodes = ["barcode02", "barcode03", "barcode04"]
     method = "clair3sing"
     main(expt, config, barcodes, method)
