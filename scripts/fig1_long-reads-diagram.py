@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from matplotlib.gridspec import GridSpec
 
 from nomadic.lib.process_gffs import load_gff, add_gff_fields
+from nomadic.lib.plot import SequencePlotter, GffPlotter
 from nomadic.lib.references import reference_collection
 from nomadic.truthset.fasta import load_haplotype_from_fasta
 from nomadic.lib.statistics import (
@@ -74,235 +75,235 @@ class AlignmentPlotData:
 # --------------------------------------------------------------------------------
 
 
-class GffPlotter:
+# class GffPlotter:
 
-    gff_features = ["protein_coding_gene", "CDS"]
+#     gff_features = ["protein_coding_gene", "CDS"]
 
-    def __init__(self, gff, chrom, start, end, amplicon_region=None):
-        """
-        Plot information from a GFF over a defined
-        region
+#     def __init__(self, gff, chrom, start, end, amplicon_region=None):
+#         """
+#         Plot information from a GFF over a defined
+#         region
 
-        """
-        self.gff = gff
-        self.chrom = chrom
-        self.start = start
-        self.end = end
-        self.amplicon_region=amplicon_region
+#         """
+#         self.gff = gff
+#         self.chrom = chrom
+#         self.start = start
+#         self.end = end
+#         self.amplicon_region=amplicon_region
 
-        self.plot_gff = self._get_relevant_gff()
+#         self.plot_gff = self._get_relevant_gff()
 
-    def _get_relevant_gff(self):
-        """Get the relevant proportion of the .gff for plotting"""
+#     def _get_relevant_gff(self):
+#         """Get the relevant proportion of the .gff for plotting"""
 
-        qry = f"(seqname == '{self.chrom}')"
-        qry += f" and ({self.start} <= start <= {self.end}"
-        qry += f" or {self.start} <= end <= {self.end}"
-        qry += f" or (start <= {self.start} and {self.end} <= end))"
-        self._qry = qry
+#         qry = f"(seqname == '{self.chrom}')"
+#         qry += f" and ({self.start} <= start <= {self.end}"
+#         qry += f" or {self.start} <= end <= {self.end}"
+#         qry += f" or (start <= {self.start} and {self.end} <= end))"
+#         self._qry = qry
 
-        # Filter to rows for plotting
-        plot_gff = self.gff.query(qry).query("feature in @self.gff_features")
-        add_gff_fields(plot_gff, ["Parent"])
+#         # Filter to rows for plotting
+#         plot_gff = self.gff.query(qry).query("feature in @self.gff_features")
+#         add_gff_fields(plot_gff, ["Parent"])
 
-        # Ensure there are some regions
-        assert plot_gff.shape[0] > 0, "No features in this region."
+#         # Ensure there are some regions
+#         assert plot_gff.shape[0] > 0, "No features in this region."
 
-        return plot_gff
+#         return plot_gff
 
-    def plot_gff_features(self, 
-                          ax, 
-                          no_axis=False, 
-                          target_gene_id=None
-                         ):
-        """Plot features of gff in this region"""
+#     def plot_gff_features(self, 
+#                           ax, 
+#                           no_axis=False, 
+#                           target_gene_id=None
+#                          ):
+#         """Plot features of gff in this region"""
 
-        PLUS_STRAND_Y = 2 / 4
-        NEG_STRAND_Y = 1 / 4
+#         PLUS_STRAND_Y = 2 / 4
+#         NEG_STRAND_Y = 1 / 4
         
         
-        DNA_COLOR = "lightgrey"
-        ORF_COLOR = "dimgrey"
-        GENE_COLOR = "silver"
-        TARGET_COLOR = "teal"
+#         DNA_COLOR = "darkgrey"
+#         ORF_COLOR = "darkgrey"
+#         GENE_COLOR = "teal"
+#         TARGET_COLOR = "teal"
 
-        # Plot features
-        for _, row in self.plot_gff.iterrows():
+#         # Plot features
+#         for _, row in self.plot_gff.iterrows():
 
-            # Define color and size from feature
-            if row["feature"] == "protein_coding_gene":
-                lw = 3
-                color = GENE_COLOR
-            elif row["feature"] == "CDS":
-                lw = 8
-                color = ORF_COLOR
-                if target_gene_id is not None and str(row["Parent"]).startswith(
-                    target_gene_id
-                ):
-                    color = TARGET_COLOR
+#             # Define color and size from feature
+#             if row["feature"] == "protein_coding_gene":
+#                 lw = 3
+#                 color = GENE_COLOR
+#             elif row["feature"] == "CDS":
+#                 lw = 8
+#                 color = ORF_COLOR
+#                 if target_gene_id is not None and str(row["Parent"]).startswith(
+#                     target_gene_id
+#                 ):
+#                     color = TARGET_COLOR
 
-            # Define y position from strand
-            if row["strand"] == "+":
-                ypos = PLUS_STRAND_Y
-            elif row["strand"] == "-":
-                ypos = NEG_STRAND_Y
+#             # Define y position from strand
+#             if row["strand"] == "+":
+#                 ypos = PLUS_STRAND_Y
+#             elif row["strand"] == "-":
+#                 ypos = NEG_STRAND_Y
 
-            # Plot the feature
-            ax.plot([row["start"], row["end"]], [ypos, ypos], lw=lw, color=color)
+#             # Plot the feature
+#             ax.plot([row["start"], row["end"]], [ypos, ypos], lw=lw, color=color)
 
-            # Could add annotation text
+#             # Could add annotation text
 
-        # Indicate strands themselves
-        ax.plot(
-            [self.start, self.end],
-            [PLUS_STRAND_Y, PLUS_STRAND_Y],
-            lw=1,
-            color=DNA_COLOR,
-            zorder=-10,
-        )
-        ax.annotate(
-            xy=(self.end, PLUS_STRAND_Y),
-            xycoords="data",
-            ha="left",
-            va="center",
-            fontsize=8,
-            text=" ($+$)",
-        )
+#         # Indicate strands themselves
+#         ax.plot(
+#             [self.start, self.end],
+#             [PLUS_STRAND_Y, PLUS_STRAND_Y],
+#             lw=1,
+#             color=DNA_COLOR,
+#             zorder=-10,
+#         )
+#         ax.annotate(
+#             xy=(self.end, PLUS_STRAND_Y),
+#             xycoords="data",
+#             ha="left",
+#             va="center",
+#             fontsize=8,
+#             text=" ($+$)",
+#         )
 
-        # Indicate strands themselves
-        ax.plot(
-            [self.start, self.end],
-            [NEG_STRAND_Y, NEG_STRAND_Y],
-            lw=1,
-            color=DNA_COLOR,
-            zorder=-10,
-        )
-        ax.annotate(
-            xy=(self.end, NEG_STRAND_Y),
-            xycoords="data",
-            ha="left",
-            va="center",
-            fontsize=8,
-            text=" ($-$)",
-        )
+#         # Indicate strands themselves
+#         ax.plot(
+#             [self.start, self.end],
+#             [NEG_STRAND_Y, NEG_STRAND_Y],
+#             lw=1,
+#             color=DNA_COLOR,
+#             zorder=-10,
+#         )
+#         ax.annotate(
+#             xy=(self.end, NEG_STRAND_Y),
+#             xycoords="data",
+#             ha="left",
+#             va="center",
+#             fontsize=8,
+#             text=" ($-$)",
+#         )
         
-        if self.amplicon_region is not None:
-            chrom, interval = self.amplicon_region.split(":")
-            start, end = interval.split("-")
-            start = int(start)
-            end = int(end)
+#         if self.amplicon_region is not None:
+#             chrom, interval = self.amplicon_region.split(":")
+#             start, end = interval.split("-")
+#             start = int(start)
+#             end = int(end)
             
-            ax.plot([start, end],
-                    [3/4, 3/4],
-                    color='red',
-                    lw=4
-                   )
+#             ax.plot([start, end],
+#                     [3/4, 3/4],
+#                     color='red',
+#                     lw=4
+#                    )
             
 
-        # Clean axis ticks
-        if no_axis:
-            ax.axis("off")
-        else:
-            for s in ["top", "right", "bottom", "left"]:
-                ax.spines[s].set_visible(False)
-            ax.get_yaxis().set_ticks([])
+#         # Clean axis ticks
+#         if no_axis:
+#             ax.axis("off")
+#         else:
+#             for s in ["top", "right", "bottom", "left"]:
+#                 ax.spines[s].set_visible(False)
+#             ax.get_yaxis().set_ticks([])
 
-        ax.set_xlim((self.start, self.end))
-        ax.set_ylim((0, 1))
-        ax.label_outer()
+#         ax.set_xlim((self.start, self.end))
+#         ax.set_ylim((0, 1))
+#         ax.label_outer()
 
-        return None
+#         return None
 
 
-class SequencePlotter:
+# class SequencePlotter:
 
-    # Colors
-    AT_PER_COL = "steelblue"
-    HP_LENGTH_COL = "firebrick"
-    SEQ_COMP_PALETTE = "Greens" 
+#     # Colors
+#     AT_PER_COL = "steelblue"
+#     HP_LENGTH_COL = "firebrick"
+#     SEQ_COMP_PALETTE = "Greens" 
 
-    def __init__(self, seq):
-        """
-        Plot various summary statistics of a nucleotide sequennce
+#     def __init__(self, seq):
+#         """
+#         Plot various summary statistics of a nucleotide sequennce
 
-        """
-        self.seq = seq
-        self._calc_summaries()
+#         """
+#         self.seq = seq
+#         self._calc_summaries()
 
-    def _calc_summaries(self):
-        """
-        Calculate summary statistics of the sequence
+#     def _calc_summaries(self):
+#         """
+#         Calculate summary statistics of the sequence
 
-        """
+#         """
 
-        self.hp_runs = get_homopolymer_runs(self.seq)
-        self.per_gc = calc_sliding_percentGC(self.seq, window=20)
-        self.seq_array = get_array_encoding(self.seq)
+#         self.hp_runs = get_homopolymer_runs(self.seq)
+#         self.per_gc = calc_sliding_percentGC(self.seq, window=20)
+#         self.seq_array = get_array_encoding(self.seq)
 
-    def plot_sequence_array(self, ax, start, end):
-        """
-        Plot array giving nucleotide composition
+#     def plot_sequence_array(self, ax, start, end):
+#         """
+#         Plot array giving nucleotide composition
 
-        """
-        # Plot
-        ax.imshow(
-            self.seq_array, cmap=self.SEQ_COMP_PALETTE, aspect="auto", extent=(start, end, 3.5, -0.5)
-        )
+#         """
+#         # Plot
+#         ax.imshow(
+#             self.seq_array, cmap=self.SEQ_COMP_PALETTE, aspect="auto", extent=(start, end, 3.5, -0.5)
+#         )
 
-        # Ticks
-        ax.set_yticks([0, 1, 2, 3])
-        ax.set_yticklabels(["A", "T", "C", "G"])
+#         # Ticks
+#         ax.set_yticks([0, 1, 2, 3])
+#         ax.set_yticklabels(["A", "T", "C", "G"])
 
-        # Labels
-        ax.set_xlabel("Position (bp)")
-        # ax.label_outer()
+#         # Labels
+#         ax.set_xlabel("Position (bp)")
+#         # ax.label_outer()
 
-        return None
+#         return None
 
-    def plot_sequence_complexity(self, ax, start, end):
-        """
-        Plot homopolymer run length and AT (%) on a single
-        axis
+#     def plot_sequence_complexity(self, ax, start, end):
+#         """
+#         Plot homopolymer run length and AT (%) on a single
+#         axis
 
-        """
+#         """
 
-        # Define x values
-        xs = np.arange(start, end)
+#         # Define x values
+#         xs = np.arange(start, end)
 
-        # Homopolymers
-        ax.plot(xs, self.hp_runs, lw=1, color=self.HP_LENGTH_COL, label="Homopolymer Length (bp)")
-        ax.set_ylabel("Homopolymer \nLength (bp)", color=self.HP_LENGTH_COL)
+#         # Homopolymers
+#         ax.plot(xs, self.hp_runs, lw=1, color=self.HP_LENGTH_COL, label="Homopolymer Length (bp)")
+#         ax.set_ylabel("Homopolymer \nLength (bp)", color=self.HP_LENGTH_COL)
 
-        # Limits
-        ax.set_ylim((1, ax.get_ylim()[1]))
-        ax.set_xlim(start, end)
+#         # Limits
+#         ax.set_ylim((1, ax.get_ylim()[1]))
+#         ax.set_xlim(start, end)
 
-        # Ticks
-        ax.yaxis.set_major_locator(plt.MultipleLocator(10))
-        ax.yaxis.set_minor_locator(plt.MultipleLocator(5))
+#         # Ticks
+#         ax.yaxis.set_major_locator(plt.MultipleLocator(10))
+#         ax.yaxis.set_minor_locator(plt.MultipleLocator(5))
 
-        # GC
-        ax.patch.set_visible(False)
-        axm = ax.twinx()
-        axm.set_zorder(ax.get_zorder() - 1)
-        axm.fill_between(
-            x=xs,
-            y1=0,
-            y2=100 * (1 - self.per_gc),
-            alpha=0.5,
-            color=self.AT_PER_COL,
-            label="% AT",
-        )
-        axm.set_ylim(ax.get_ylim()[0], 100)
-        axm.set_ylabel("AT (%)\n[20bp sliding average]", color=self.AT_PER_COL)
+#         # GC
+#         ax.patch.set_visible(False)
+#         axm = ax.twinx()
+#         axm.set_zorder(ax.get_zorder() - 1)
+#         axm.fill_between(
+#             x=xs,
+#             y1=0,
+#             y2=100 * (1 - self.per_gc),
+#             alpha=0.5,
+#             color=self.AT_PER_COL,
+#             label="% AT",
+#         )
+#         axm.set_ylim(ax.get_ylim()[0], 100)
+#         axm.set_ylabel("AT (%)\n[20bp sliding average]", color=self.AT_PER_COL)
 
-        # Ticks
-        axm.yaxis.set_major_locator(plt.MultipleLocator(20))
-        axm.yaxis.set_minor_locator(plt.MultipleLocator(10))
+#         # Ticks
+#         axm.yaxis.set_major_locator(plt.MultipleLocator(20))
+#         axm.yaxis.set_minor_locator(plt.MultipleLocator(10))
 
-        # Clean axis
-        axm.xaxis.set_visible(False)
-        plt.setp(ax.get_xticklabels(), visible=False)
+#         # Clean axis
+#         axm.xaxis.set_visible(False)
+#         plt.setp(ax.get_xticklabels(), visible=False)
 
 
 class PrimerPlotter:
@@ -391,6 +392,7 @@ class CoverageLengthPlotter:
 
     # Colors
     READ_LENGTH_PALETTE = "Spectral_r"
+    #sns.dark_palette("#541675", as_cmap=True)
 
     def __init__(self, bam_path):
         """
@@ -461,6 +463,7 @@ class CoverageLengthPlotter:
         )
         
         # Define colors from binns
+        #cols = sns.cubehelix_palette(start=.5, rot=-.5, n_colors=len(bin_cats))
         cols = sns.color_palette(self.READ_LENGTH_PALETTE, len(bin_cats))
         self.bin_col = dict(zip(bin_cats, cols))
 
@@ -544,6 +547,7 @@ class CombinedPlotter:
         # Axes order and sizing
         AxesFrame = namedtuple("AxesFrame", ["name", "rows", "plot_func"])
         axes_order = [
+            AxesFrame("genes", 6, partial(self.gff_plotter.plot_gff_features)),
             AxesFrame(
                 "coverage",
                 24,
@@ -552,10 +556,9 @@ class CombinedPlotter:
             # AxesFrame(
             #     "primer", 2, partial(self.primer_plotter.plot, start=start, end=end, no_axis=True)
             # ),
-            AxesFrame("genes", 8, partial(self.gff_plotter.plot_gff_features, no_axis=True)),
             AxesFrame(
                 "complexity",
-                16,
+                14,
                 partial(
                     self.seq_plotter.plot_sequence_complexity, start=start, end=end
                 ),
@@ -735,8 +738,8 @@ def main(
         gff=gff, 
         chrom=chrom, 
         start=window_start, 
-        end=window_end, 
-        amplicon_region=target_region)
+        end=window_end)
+        #amplicon_region=target_region)
 
     # Coverage
     coverage_plotter = CoverageLengthPlotter(bam_path=bam_path)
