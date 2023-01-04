@@ -64,7 +64,9 @@ def main(expt_dir, config, barcode, target_gene, max_reads, algorithm):
             for j in range(i, n_reads):
                 aligner.set_sequences(
                     x=reads[i].seq, 
-                    y=reads[j].seq
+                    y=reads[j].seq,
+                    xp=reads[i].probs,
+                    yp=reads[j].probs
                 )
                 aligner.set_scoring_model()
                 aligner.align()

@@ -369,7 +369,7 @@ def barplot_states(
         colors = sns.color_palette("viridis", n_states)
 
     # Prepare canvas
-    fig, ax = plt.subplots(figsize=(5, size_scale * n_barcodes))
+    fig, ax = plt.subplots(figsize=(1.5, size_scale * n_barcodes))
 
     # Plot
     df.plot(kind="barh", stacked=True, ec="black", width=0.8, color=colors, ax=ax)

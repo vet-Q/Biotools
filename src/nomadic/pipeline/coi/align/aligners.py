@@ -13,11 +13,16 @@ from numba import njit
 
 
 class PairwiseAligner(ABC):
-    def set_sequences(self, x, y):
+    def set_sequences(self, x, y, xp=None, yp=None):
         self.x = x
         self.y = y
         self.n = len(x)
         self.m = len(y)
+        
+        # Optional per-base error probabilities
+        # from Phred scores
+        self.xp = xp
+        self.yp = yp
     
     @abstractmethod
     def set_scoring_model(self):
@@ -305,6 +310,107 @@ class NeedlemanWunschNumbaBanded(PairwiseAligner):
         
         return score
 
+
+# --------------------------------------------------------------------------------
+# Concrete implementation using read quality scores
+#
+# --------------------------------------------------------------------------------
+
+
+@njit
+def calc_substitution_score(x, y, xp, yp):
+    """
+    Compute the likelihood of observing the two nucleotides
+    `x` and `y` with quality scores `xp` and `yp`;
+    given they were created from sequencing the same base
+    
+    """
+    
+    if x == y:
+        prob = (1 - xp)*(1 - yp) + xp*yp/3
+    else:
+        prob = (1 - xp)*yp + (1 - yp)*xp + yp*xp
+
+    return np.log10(prob)
+
+
+class NeedlemanWunschNumbaBandedQScores(PairwiseAligner):
+    """
+    Global pairwise alignment with Needleman-Wunsch,
+    Implemented with JIT-compilation via Numba,
+    consider only alignments inside a fixed-width band,
+    and weight matches based on quality scores.
+    
+    """
+
+    GAP_PENALTY_PROB = 0.05
+    
+    def set_scoring_model(self):
+        self.gap_penalty = np.log10(self.GAP_PENALTY_PROB)
+    
+    def align(self, band_radius=40):
+        """
+        Wrapper for Numba implementation
+        
+        """
+        
+        score = self._align(
+            n=self.n,
+            m=self.m,
+            x=self.x,
+            y=self.y,
+            xp=self.xp,
+            yp=self.yp,
+            gap_penalty=self.gap_penalty,
+            band_radius=band_radius
+        )
+        self.score = score
+        
+    @staticmethod
+    @njit
+    def _align(n, m, x, y, xp, yp, gap_penalty, band_radius): 
+        """
+        Pairwise alignment with Numba
+
+        """             
+
+        # Adjust banding for uneequal sequence lengths
+        ratio = (m + 1) / (n + 1)
+
+        # Suffix matrix
+        F = np.zeros((n + 1, m + 1))
+        F[:] = -10**9
+        F[0, 1:] = np.arange(1, m + 1) * gap_penalty
+        F[1:, 0] = np.arange(1, n + 1) * gap_penalty
+        
+        # Aligned sequences
+        score = None
+        
+        # Calculate suffix matrix
+        for i in range(1, n + 1):
+            
+            i_adj = int(i * ratio)
+            jmin = max(0, i_adj - band_radius)
+            jmax = min(m + 1, i_adj + band_radius + 1)
+
+            for j in range(jmin, jmax):
+
+                # Compute scores of subsequences
+                s = [ 
+                    F[i - 1, j - 1] + calc_substitution_score(x[i-1], y[j-1], xp[i-1], yp[j-1]),
+                    F[i - 1, j] + gap_penalty,  # Insertion in sequence y (indexed by j)
+                    F[i, j - 1] + gap_penalty   # Insertion in sequence x (indexed by i)
+                ]
+
+                # Assign maximum score
+                F[i, j] = max(s)
+        
+        # Get the final score
+        score = F[i, j]
+        
+        return score
+
+
 # --------------------------------------------------------------------------------
 # Collection
 #
@@ -314,6 +420,7 @@ class NeedlemanWunschNumbaBanded(PairwiseAligner):
 ALIGNER_COLLECTION = {
     "needleman": NeedlemanWunsch,
     "needleman_numba": NeedlemanWunschNumba,
-    "needleman_numba_banded": NeedlemanWunschNumbaBanded
+    "needleman_numba_banded": NeedlemanWunschNumbaBanded,
+    "needleman_numba_banded_qscores": NeedlemanWunschNumbaBandedQScores,
 }
 

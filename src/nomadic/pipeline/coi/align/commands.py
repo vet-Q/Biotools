@@ -27,7 +27,7 @@ from nomadic.pipeline.cli import experiment_options, barcode_option
     "-a",
     "--algorithm",
     type=click.Choice(ALIGNER_COLLECTION),
-    default="needleman_numba_banded",
+    default="needleman_numba_banded_qscores",
     show_default=True,
     help="Pairwise alignment algorithm."
 )
