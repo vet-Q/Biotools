@@ -5,15 +5,43 @@ from dataclasses import dataclass
 from typing import List
 
 
+def calc_percent_gc(seq: str) -> float:
+    """ Calculate GC percentage of a sequece """
+    N = len(seq)
+    n_gc = len([nt for nt in seq if nt in ["G", "C"]])
+    return 100*n_gc/N if N > 0 else 0.0
+
+
+def convert_ascii_to_quals(ascii_quals: str) -> np.ndarray:
+    """
+    Convert ASCII representation of quality scores
+    to phred quality scores
+
+    """
+    return np.array([ord(q) - 33 for q in ascii_quals])
+
+
+def convert_ascii_to_probs(ascii_quals: str) -> np.ndarray:
+    """
+    Convert ASCII representation of quality scores to 
+    error probabilities
+    
+    """
+    qs = convert_ascii_to_quals(ascii_quals)
+    return 10**(qs/-10)
+
+
 @dataclass(frozen=False)
 class Read:
     read_id: str
     seq: str
     quals: str
     length: int = None
+    probs: np.ndarray = None
 
     def __post_init__(self):
         self.length = len(self.seq)
+        self.probs = convert_ascii_to_probs(self.quals)
 
 
 @dataclass
@@ -41,22 +69,6 @@ def load_fastq_reads(fastq_path: str) -> List[Read]:
                 reads.append(Read(read_id=name, seq=seq, quals=quals))
 
     return reads
-
-
-def calc_percent_gc(seq: str) -> float:
-    """ Calculate GC percentage of a sequece """
-    N = len(seq)
-    n_gc = len([nt for nt in seq if nt in ["G", "C"]])
-    return 100*n_gc/N if N > 0 else 0.0
-
-
-def convert_ascii_to_quals(ascii_quals: str) -> np.ndarray:
-    """
-    Convert ASCII representation of quality scores
-    to numeric
-
-    """
-    return np.array([ord(q) - 33 for q in ascii_quals])
 
 
 def load_fastq_read_info(fastq_path: str) -> pd.DataFrame:
