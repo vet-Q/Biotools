@@ -329,7 +329,7 @@ def calc_substitution_score(x, y, xp, yp):
     if x == y:
         prob = (1 - xp)*(1 - yp) + xp*yp/3
     else:
-        prob = (1 - xp)*yp + (1 - yp)*xp + yp*xp
+        prob = (1 - xp)*yp + (1 - yp)*xp + yp*xp*2/3
 
     return np.log10(prob)
 
