@@ -138,7 +138,7 @@ class HomoSapiens(Reference):
 
     source = "ensembl"
     source_url = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/"
-    source_url += "000/001/405/GCA_000001405.15_GRCh38/GO_TO_CURRENT_VERSION/"
+    source_url += "000/001/405/GCA_000001405.29_GRCh38.p14/"
 
     def __init__(self):
         self.name = "Hs"
@@ -219,6 +219,20 @@ references = [
 reference_collection = {
     ref.name: ref for ref in references
 }
+
+
+# ================================================================
+# P.falciparum strain colors
+#
+# ================================================================
+
+
+# PALETTE
+blue = (66/255, 133/255, 244/255)
+green = (52/255, 168/255, 83/255)
+yellow = (251/255, 188/255, 5/255)
+red = (234/255, 67/255, 53/255)
+PF_REF_PALETTE = [blue, green, yellow, red]
 
 
 # ================================================================
