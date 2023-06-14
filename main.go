@@ -3,94 +3,82 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
+	"log"
 	"os"
 	"strings"
 )
 
-func Readfasta(filePath string) (result []string) {
+func main() {
+	// 원본 FASTA 파일 경로
+	originalFilePath := "C:\\Users\\kwono\\Desktop\\ASF_feature_table_all.tabular"
 
-	file, err := os.Open(filePath)
+	// 복사 대상 FASTA 파일 경로
+	targetFilePath := "C:\\Users\\kwono\\Desktop\\ASF_feature_table_all.tabular_modified"
+
+	slicedPath := "C:\\Users\\kwono\\Desktop\\merged.fasta"
+	// 슬라이스된 이름들
+	names := slicedData(slicedPath)
+
+	err := copyFastaFile(originalFilePath, targetFilePath, names)
 	if err != nil {
+		log.Fatal(err)
+	}
 
-		// 파일이 존재하지 않는 경우 에러를 반환하는 코드
-		if os.IsNotExist(err) {
-			fmt.Printf("파일이 존재하지 않습니다: %v", err)
-		} else {
-			fmt.Printf("파일을 열 수 없습니다: %v", err)
-		}
+	fmt.Println("FASTA 파일이 성공적으로 복사되었습니다.")
+}
+
+// siice된 이름을 추출하는 함수
+func slicedData(inputData string) (result []string) {
+	originalFile, err := os.Open(inputData)
+	if err != nil {
 		return
 	}
-	defer file.Close()
+	defer originalFile.Close()
 
-	scanner := bufio.NewReader(file)
+	// 파일 스캐너 생성
+	scanner := bufio.NewScanner(originalFile)
 
-	for {
-		line, err := scanner.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			fmt.Printf("파일을 읽는 도중 오류가 발생했습니다: %v", err)
-			return
-		}
+	for scanner.Scan() {
+		line := scanner.Text()
 
-		// 각 줄을 처리하는 로직을 구현합니다.
+		// 헤더인 경우 이름 변경
 		if strings.HasPrefix(line, ">") {
+			line = strings.TrimPrefix(line, ">")
 			result = append(result, line)
 		}
-
 	}
 	return result
 }
 
-func Writetabular(records []string, inputfilePath string, outputfilePath string) error {
-	file, err := os.Open(inputfilePath)
-	if err != nil {
-
-		// 파일이 존재하지 않는 경우 에러를 반환하는 코드
-		if os.IsNotExist(err) {
-			fmt.Printf("파일이 존재하지 않습니다: %v", err)
-		} else {
-			fmt.Printf("파일을 열 수 없습니다: %v", err)
-		}
-		return nil
-	}
-	defer file.Close()
-
-	scanner := bufio.NewReader(file)
-
-	for {
-		line, err := scanner.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			fmt.Printf("파일을 읽는 도중 오류가 발생했습니다: %v", err)
-			return nil
-		}
-
-		// 각 줄을 처리하는 로직을 구현합니다.
-		if strings.HasPrefix(line, ">") {
-			result = append(result, line)
-		}
-
-	}
-
-	outfile, err := os.Create(outputfilePath)
+// FASTA 파일 복사 함수
+func copyFastaFile(originalFilePath, targetFilePath string, names []string) error {
+	// 원본 파일 열기
+	originalFile, err := os.Open(originalFilePath)
 	if err != nil {
 		return err
 	}
-	defer outfile.Close()
+	defer originalFile.Close()
 
-	writer := bufio.NewWriter(outfile)
-	for _, record := range records {
-		_, err := fmt.Fprintf(writer, ">%s\n%s\n", record.Header, record.Seq)
-		if err != nil {
-			return err
-		}
+	// 복사 대상 파일 생성
+	targetFile, err := os.Create(targetFilePath)
+	if err != nil {
+		return err
+	}
+	defer targetFile.Close()
+
+	// 파일 스캐너 생성
+	scanner := bufio.NewScanner(originalFile)
+
+	// 대상 파일 작성기 생성
+	writer := bufio.NewWriter(targetFile)
+
+	// FASTA 파일 복사
+	err = processFastaData(scanner, writer, names)
+	if err != nil {
+		return err
 	}
 
+	// 대상 파일 버퍼 비우고 저장
 	err = writer.Flush()
 	if err != nil {
 		return err
@@ -99,8 +87,47 @@ func Writetabular(records []string, inputfilePath string, outputfilePath string)
 	return nil
 }
 
-func main() {
-	filePath := "C:\\Users\\user\\Desktop\\ASF_KNU\\upload_ASF\\Galaxy2-[Genbank_to_Five_Column_Format_on_data_1] (1).tabular"
-	// readfilePath := "C:\\Users\\user\\Desktop\\ASF_KNU\\ASF_knu_final.fasta.fasta"
-	fmt.Println(Readfasta(filePath))
+// FASTA 데이터 처리 함수
+func processFastaData(scanner *bufio.Scanner, writer *bufio.Writer, names []string) error {
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// 헤더인 경우 이름 변경
+		if strings.HasPrefix(line, ">") {
+			header := strings.TrimPrefix(line, ">")
+			newHeader := getNewHeader(header, names)
+
+			// 대상 파일에 쓰기
+			_, err := writer.WriteString(">" + newHeader + "\n")
+			if err != nil {
+				return err
+			}
+		} else {
+			// 데이터인 경우 그대로 대상 파일에 쓰기
+			_, err := writer.WriteString(line + "\n")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 슬라이스된 이름을 가져오는 함수
+func getNewHeader(oldHeader string, names []string) string {
+	// 예외 처리: 이름이 없는 경우 기본값 사용
+	if len(names) == 0 {
+		return "NewName"
+	}
+
+	// 이름 슬라이스 인덱스 가져오기
+	index := len(names) - 1
+
+	// 슬라이스된 이름 반환
+	return names[index]
 }
