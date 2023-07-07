@@ -6,7 +6,7 @@ import matplotlib.colors as mcl
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
-df = pd.read_excel(r"C:\Users\user\Desktop\230705_ASFV APQA.alignment.variation2.xlsx",header=1)
+df = pd.read_excel(r"C:\Users\kwono\Documents\python project\Biotools\SNPvisual\230705_ASFV APQA.alignment.variation2.xlsx",header=1)
 
 seq = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', '13th', '14th', '15th','16th', '17th', '18th', '19th', '20th', '21st']
 
