@@ -1,18 +1,21 @@
 import os
 import click
 
+from pathlib import Path
+
 from nomadic.lib.generic import produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.pipeline.cli import experiment_options, barcode_option
 
 
-BAR_PIPELINE = "slurm/templates/pipelines/nomadic-barcode.sh"
-EXPT_PIPELINE = "slurm/templates/pipelines/nomadic-experiment.sh"
-SUBMIT_PIPELINE = "slurm/templates/nomadic-submit.sh"
-RUNS_DIR = "slurm/runs"
+GUPPY_PIPELINE = Path("slurm/templates/pipelines/nomadic-guppy.sh")
+BAR_PIPELINE = Path("slurm/templates/pipelines/nomadic-barcode.sh")
+EXPT_PIPELINE = Path("slurm/templates/pipelines/nomadic-experiment.sh")
+SUBMIT_PIPELINE = Path("slurm/templates/nomadic-submit.sh")
+RUNS_DIR = Path("slurm/runs")
 
 
-def load_format_write(input_file, output_file, **kwargs):
+def load_format_write(input_file: Path, output_file: Path, **kwargs) -> None:
     """Load a file that has named formating fields, e.g. {job_name}, format it, and write"""
     
     input_str = "".join(open(input_file, "r").readlines())
@@ -43,14 +46,16 @@ def main(expt_dir: str, config: str, barcode: str):
     array_str = ",".join([str(int(b[-2:])) for b in params["barcodes"]]) # assuming <name><val>
 
     # Prepare output directory
-    expt_name = os.path.basename(expt_dir)
-    output_dir = produce_dir(RUNS_DIR, expt_name)
+    expt_dir = Path(expt_dir)
+    expt_name = expt_dir.name
+    output_dir = Path(produce_dir(RUNS_DIR, expt_name))
 
     # Format
     pipe_args = {"expt_dir": expt_dir, "config": config, "array_str": array_str}
-    load_format_write(BAR_PIPELINE, f"{output_dir}/{os.path.basename(BAR_PIPELINE)}", **pipe_args)
-    load_format_write(EXPT_PIPELINE, f"{output_dir}/{os.path.basename(EXPT_PIPELINE)}", **pipe_args)
-    load_format_write(SUBMIT_PIPELINE, f"{output_dir}/{os.path.basename(SUBMIT_PIPELINE)}", run_dir=output_dir)
+    load_format_write(GUPPY_PIPELINE, output_dir / GUPPY_PIPELINE.name, **pipe_args)
+    load_format_write(BAR_PIPELINE, output_dir / BAR_PIPELINE.name, **pipe_args)
+    load_format_write(EXPT_PIPELINE, output_dir / EXPT_PIPELINE.name, **pipe_args)
+    load_format_write(SUBMIT_PIPELINE, output_dir / SUBMIT_PIPELINE.name, run_dir=output_dir)
 
 
 if __name__ == "__main__":
