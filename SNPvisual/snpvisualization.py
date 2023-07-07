@@ -55,7 +55,7 @@ sns.set(font_scale=0.7)
 sns.color_palette("crest",3)
 ax = sns.heatmap(df_sorted, square=False, linewidths=0.6, annot=False, cmap=cmap, cbar=False,
                  annot_kws={'fontsize': 12, 'fontstyle': 'italic', 'color':'b', 'alpha': 0.6,
-                       'rotation': 'vertical', 'verticalalignment': 'center', 'backgroundcolor': 'w'},ax=axs[1,0])
+                       'rotation':0, 'verticalalignment': 'center', 'backgroundcolor': 'w'},ax=axs[1,0])
 
 
 legend_handles = [Patch(color=colors[0], label='REF.'),
