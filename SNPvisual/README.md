@@ -1,10 +1,17 @@
-# PyHRM
+# PyHRM and SNP visualization
+
+## SNP visualization.
+For the SNP visualization, you need to prepare alignment fasta file or vcf file.
+It can make visualizaion of single nucleotide polymorphism.
+
+![snp table.png](..%2F..%2F..%2F..%2FDesktop%2Fsnp%20table.png)
+
+## PyHRM
 High Resolution Melt Analysis in Python
 
 I am surprised that no free software is available to do such simple data analysis. So with some opensource spirit, I decide to write my own and share it with fellow scientists.
 
 You can view this ipython notebook demo here:
-
 https://github.com/liuyigh/PyHRM/blob/master/PyHRM.ipynb
 
 The PyHRM.py file is a script you can run in Spyder or your favorite IDE instead of a Jupyter Notebook.
