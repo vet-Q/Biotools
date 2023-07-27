@@ -20,3 +20,13 @@ submit_pipeline-*.sh
 # All my development scripts start with `dev`
 dev*
 ./transfer_nomadic.sh # shell script for transfer to Oxford cluster
+
+# I think it is best to omit these directories
+# by default as they are home to a lot of ad hoc code
+# that is cluttering my `git status`
+# I can still force add important scripts/notebooks
+notebooks
+scripts
+configs
+notes
+summary_tables
