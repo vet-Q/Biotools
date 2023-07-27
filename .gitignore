@@ -30,3 +30,5 @@ scripts
 configs
 notes
 summary_tables
+_testing_data
+slurm/runs
