@@ -96,7 +96,7 @@ class BalancePlotter:
         "PMI",
         "PMIII"
     ]
-    NOMADS8_COLS = sns.color_palette("viridis", 8)   
+    NOMADS8_COLS = sns.color_palette("Spectral", 8)   
     
     NOMADS16_ORDER = NOMADS8_ORDER + [
         "AMA1",
@@ -223,6 +223,10 @@ class BalancePlotter:
         ax.invert_yaxis()
 
         # Ticks
+        ax.set_xlim(0, 5*10**4)
+        ax.set_xticks([10**k for k in range(5)])
+        ax.tick_params(axis='x', which='minor')
+        ax.set_axisbelow(True)
         ax.grid(ls="dotted", axis="x", zorder=-10)
         ax.axvline(x=100, color="black", zorder=-10)
 
