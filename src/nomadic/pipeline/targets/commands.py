@@ -57,6 +57,7 @@ def target_extraction_overview(expt_dir, config):
 
     # Merge with metadata
     merged_df = pd.merge(left=joint_df, right=params["metadata"], on="barcode")
+    sample_id_order = params["metadata"]["sample_id"].tolist()
 
     # Write
     merged_df.to_csv(f"{output_dir}/table.target_coverage.overview.csv", index=False)
@@ -71,7 +72,7 @@ def target_extraction_overview(expt_dir, config):
         # Pivot for heatmap
         pivot_df = plot_df.pivot(
             index="sample_id", columns="gene_name", values="reads_mapped"
-        )
+        ).loc[sample_id_order]  # maintain ordering
 
         # Plot heatmap
         plot_dataframe_heat(
