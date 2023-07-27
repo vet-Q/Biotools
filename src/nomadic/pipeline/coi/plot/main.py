@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import seaborn as sns
@@ -8,7 +10,8 @@ from nomadic.lib.references import (
     PlasmodiumFalciparum3D7,
     PlasmodiumFalciparumDd2,
     PlasmodiumFalciparumGB4,
-    PlasmodiumFalciparumHB3
+    PlasmodiumFalciparumHB3,
+    PF_REF_PALETTE
 )
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import produce_dir, print_header, print_footer
@@ -89,9 +92,12 @@ EXPECTED_SIZES = {
 def plot_target_histogram(read_df, 
                           target_gene, 
                           references,
-                          palette="Set1",
+                          palette=PF_REF_PALETTE,
                           plot_expected=True,
-                          output_path=None):
+                          output_path=None,
+                          xlims=None,
+                          **kwargs
+                          ):
     """
     Plot read length histograms for a target gene,
     annotate by best mapping reference
@@ -102,26 +108,42 @@ def plot_target_histogram(read_df,
     assert "length" in read_df.columns
     
     # CREATE COLOR PALETTE
+    #print(references)
     ref_cols = dict(
         zip([r.name for r in references], 
-            sns.color_palette(palette, len(references)))
+            palette)
     )
     
     # GROUP BY REFERENCE
-    grps = read_df.groupby("highest_identity_ref")
+    grps = read_df.groupby("highest_identity_ref", sort=False)
     
+    #
+    if xlims is not None:
+        bins = np.arange(xlims[0], xlims[1] + 10, 10)
+    else:
+        bins = 50
+
     # PLOT
-    fig, ax = plt.subplots(1, 1, figsize=(6, 3.5))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+
+    print(ref_cols)
+    print(len(grps))
+    print([r for r, _ in grps])
+    print([ref_cols[r] for r, _ in grps])
 
     ax.hist(
         [gdf["length"] for _, gdf in grps],
-        bins=50,
+        bins=bins,
         stacked=True,
         color=[ref_cols[r] for r, _ in grps],
         ec="black",
         lw=0.5,
         label=[r for r, _ in grps]
     )
+
+    # Limits
+    if xlims is not None:
+        ax.set_xlim(xlims)
 
     # Labels
     ax.set_xlabel(f"{target_gene} ORF length (bp)")
@@ -328,6 +350,9 @@ def main(expt_dir, config, barcode, target_gene):
         highest_identity_ref = panmap_wide_df.idxmax(axis=1)
         highest_identity_ref.name = "highest_identity_ref"
 
+        # TODO
+        # - I SHOULD BE WRITING THIS AS A CSV
+
         read_df = pd.merge(
             left=read_df, 
             right=highest_identity_ref,
@@ -336,8 +361,8 @@ def main(expt_dir, config, barcode, target_gene):
         )
         read_df.insert(0, "barcode", barcode)
 
-        # Load pairwise overlap information
-        overlap_df = load_paf(f"{coi_dir}/overlap/reads.overlap.{target_gene}.paf")
+        # # Load pairwise overlap information
+        # overlap_df = load_paf(f"{coi_dir}/overlap/reads.overlap.{target_gene}.paf")
 
 
         # PLOTTING
@@ -345,21 +370,22 @@ def main(expt_dir, config, barcode, target_gene):
         print("Plotting read lengths...")
         plot_target_histogram(
             read_df, 
-            target_gene, 
+            target_gene,
             references,
-            palette="Set1",
+            palette=PF_REF_PALETTE,
+            xlims=(700, 1000),
             output_path=f"{plot_dir}/plot.read_lengths.{target_gene}.pdf")
 
 
-        # Identity network
-        print("Plotting identity network...")
-        plot_identity_network(
-            overlap_df, 
-            read_df, 
-            references, 
-            identity_threshold=NETWORK_IDENTITY_THRESHOLD,
-            output_path=f"{plot_dir}/plot.identity_network.{target_gene}.idn{100*NETWORK_IDENTITY_THRESHOLD:.0f}per.pdf"
-        )
+        # # Identity network
+        # print("Plotting identity network...")
+        # plot_identity_network(
+        #     overlap_df, 
+        #     read_df, 
+        #     references, 
+        #     identity_threshold=NETWORK_IDENTITY_THRESHOLD,
+        #     output_path=f"{plot_dir}/plot.identity_network.{target_gene}.idn{100*NETWORK_IDENTITY_THRESHOLD:.0f}per.pdf"
+        # )
 
     print_footer(t0)
 

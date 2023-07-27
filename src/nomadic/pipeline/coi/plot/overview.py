@@ -8,6 +8,7 @@ from nomadic.lib.references import (
     PlasmodiumFalciparumGB4,
     PlasmodiumFalciparumHB3,
 )
+from nomadic.lib.references import PF_REF_PALETTE
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.generic import produce_dir, print_header, print_footer
 from nomadic.pipeline.coi.trim.targets import TARGET_COLLECTION
@@ -112,19 +113,23 @@ def plot_overview(expt_dir, config, target_gene):
     overview_df = pd.merge(
         left=overview_df, right=params["metadata"], on="barcode", how="left"
     )
+    overview_df["highest_identity_ref"] = pd.Categorical(
+        values=overview_df["highest_identity_ref"],
+        categories=[r.name for r in references],
+        ordered=True)
 
     # Plot read lengths
     # TODO: wrap this
     size_scale = 0.25
     n_barcodes = len(params["barcodes"])
-    fig, ax = plt.subplots(1, 1, figsize=(4, n_barcodes * size_scale))
+    fig, ax = plt.subplots(1, 1, figsize=(2, n_barcodes * size_scale))
 
     sns.stripplot(
         y="sample_id",
         x="length",
         hue="highest_identity_ref",
-        palette=sns.color_palette("Set1", 4),
-        alpha=1,
+        palette=PF_REF_PALETTE,
+        alpha=0.5,
         s=1,
         data=overview_df,
         ax=ax,
@@ -138,6 +143,9 @@ def plot_overview(expt_dir, config, target_gene):
     # Limits
     if target_gene == "CSP":
         ax.set_xlim((800, 1600))
+    elif target_gene == "MSP2":
+        ax.set_xlim((650, 1000))
+        #ax.set_xlim((600, 1100))
 
     # Ticks and grid
     ax.set_axisbelow(True)
