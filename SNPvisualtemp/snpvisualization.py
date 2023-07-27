@@ -7,17 +7,14 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
 
-df = pd.read_excel(r"C:\Users\user\PycharmProjects\pythonProject\Biotools\SNPvisual\230720_ASFV APQA.alignment.variation2.xlsx",header=1,sheet_name="ASFV")
-labels = pd.read_excel(r"C:\Users\user\PycharmProjects\pythonProject\Biotools\SNPvisual\230720_ASFV APQA.alignment.variation2.xlsx",sheet_name="accessionID")
-labels = labels['Sequence ID']
+df = pd.read_excel(r"C:\Users\user\PycharmProjects\pythonProject\Biotools\SNPvisualtemp\LAO234 Supplementary Table.xlsx",header=2,sheet_name="ASFV")
+
 dfAnnotPre = df.copy()
-Annotseq = ['NC_044959','1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', '13th',
-       '14th', '15th','16th', '17th', '18th', '19th', '20th', '21st','Korea/YC1/2019','Korea/HC224/2020']
+Annotseq = ['NC_044959','LAO2 general','LAO3 general','LAO4 general']
 dfForAnnot = dfAnnotPre[Annotseq]
 dfForAnnotArray = np.array(dfForAnnot)
 
-seq = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', '13th',
-       '14th', '15th','16th', '17th', '18th', '19th', '20th', '21st','Korea/YC1/2019','Korea/HC224/2020']
+seq = ['LAO2 general','LAO3 general','LAO4 general']
 
 
 # Classify the data to 3 category (REF, ALT, InDel) 
@@ -66,13 +63,13 @@ df_sorted[seq] = df_sorted[seq].astype(float)
 
 
 # Build figure and axes
-fig, axs = plt.subplots(2, 2, sharex="col", sharey="row", figsize=(30,50),
-    gridspec_kw=dict(height_ratios=[1,5],width_ratios=[4, 1],wspace=0, hspace=0))
+fig, axs = plt.subplots(2, 2, sharex="col", sharey="row", figsize=(5,20),
+    gridspec_kw=dict(height_ratios=[1,3],width_ratios=[1.5,1],wspace=0, hspace=0))
 
 axs[0, 1].set_visible(False)
 
-axs[0, 0].set_box_aspect(1/11)
-axs[1, 1].set_box_aspect(3/1)
+# axs[0, 0].set_box_aspect(1/5)
+# axs[1, 1].set_box_aspect(4/1)
 
 # set the palette
 green = sns.light_palette("seagreen", reverse=True, as_cmap=True)
@@ -87,9 +84,9 @@ ax = sns.heatmap(df_sorted, square=False, linewidths=0.6, annot=dfForAnnotArray,
 # get ytick label and set the label manually to avoid automatically rotation of labels when adjusting the figure size
 ticklabel = []
 ticklabel.append("NC_044959")
-ticklabel = ticklabel + list(labels) + seq[-2:]
+# ticklabel = ticklabel + list(labels) + seq[-2:]
 ax.set_yticklabels(ax.get_yticklabels(), rotation=0, va='center')
-ax.set_xticklabels(ticklabel, rotation=350, va='top', ha='left')
+# ax.set_xticklabels(ticklabel, rotation=350, va='top', ha='left')
 
 legend_handles = [Patch(color=colors[0], label='REF.'),
                   Patch(color=colors[1], label='InDel.'),
@@ -103,35 +100,35 @@ ax1_sum = df_sorted[seq].astype(bool).sum(axis=1)
 ax0_mean = ax0_sum.mean()
 ax1_mean = ax1_sum.mean()
 
-ax2 = axs[1, 1].barh(y=np.array([i+0.5 for i in range(43)]), width=ax1_sum.values,alpha=0.5,color='dimgrey')
-ax1 = axs[0, 0].bar(x=np.array([i+0.5 for i in range(24)]), height=np.insert(ax0_sum.values,0,0), width=0.5, align='center',alpha=0.4,color='dimgrey')
-axs[0, 0].axis(xmin=0, xmax=24, ymax=28)
-axs[0, 0].set_xticks([i+0.5 for i in range(24)])
-axs[0, 0].hlines(y=ax0_mean,xmin=0,xmax=24,linestyles="--",colors="grey",alpha=0.6)
-axs[0, 0].text(1, 16,  'mean SNP:%.3f' % ax0_mean, ha='center', va='bottom', size = 10)
+ax2 = axs[1, 1].barh(y=np.array([i+0.5 for i in range(29)]), width=ax1_sum.values,alpha=0.5,color='dimgrey')
+ax1 = axs[0, 0].bar(x=np.array([i+0.5 for i in range(4)]), height=np.insert(ax0_sum.values,0,0), width=0.5, align='center',alpha=0.4,color='dimgrey')
+axs[0, 0].axis(xmin=0, xmax=4, ymax=30)
+axs[0, 0].set_xticks([i+0.5 for i in range(4)])
+axs[0, 0].hlines(y=ax0_mean,xmin=0,xmax=4,linestyles="--",colors="grey",alpha=0.6)
+# axs[0, 0].text(1, 16,  'mean SNP:%.3f' % ax0_mean, ha='center', va='bottom', size = 10)
 
-
-
-## 화살표 작성을 위한 코드
-arrow_props = dict(facecolor='black', arrowstyle='->')
-
-import matplotlib.patches as patches
-
-# 화살표를 추가할 x 범위 설정
-arrow_x_range = [22, 24]
-
-# y 값 설정
-arrow_y = 20
-
-# 양방향 화살표를 그리기 위한 화살표 패치 생성
-arrow_patch = patches.FancyArrowPatch(
-    (arrow_x_range[0], arrow_y), (arrow_x_range[1], arrow_y),
-    arrowstyle='<->', color='blue', mutation_scale=5
-)
-
-# axs[0, 0]에 화살표 패치 추가
-axs[0, 0].add_patch(arrow_patch)
-axs[0, 0].text(23, 20,  "wild boar", ha='center', va='bottom', size = 10, color='black')
+#
+#
+# ## 화살표 작성을 위한 코드
+# arrow_props = dict(facecolor='black', arrowstyle='->')
+#
+# import matplotlib.patches as patches
+#
+# # 화살표를 추가할 x 범위 설정
+# arrow_x_range = [22, 24]
+#
+# # y 값 설정
+# arrow_y = 20
+#
+# # 양방향 화살표를 그리기 위한 화살표 패치 생성
+# arrow_patch = patches.FancyArrowPatch(
+#     (arrow_x_range[0], arrow_y), (arrow_x_range[1], arrow_y),
+#     arrowstyle='<->', color='blue', mutation_scale=5
+# )
+#
+# # axs[0, 0]에 화살표 패치 추가
+# axs[0, 0].add_patch(arrow_patch)
+# axs[0, 0].text(23, 20,  "wild boar", ha='center', va='bottom', size = 10, color='black')
 
 
 # write tick values by for-looping
