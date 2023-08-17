@@ -46,7 +46,16 @@ def load_vcf_using_allel(vcf_path, add_genotypes=True, only_snp=True):
     """
 
     # Load callset
-    callset = allel.read_vcf(vcf_path)
+    try:
+        callset = allel.read_vcf(vcf_path)
+    except FileNotFoundError:
+        # TODO: This is quite a dangerous assumption
+        # TODO: However, Clair3 returns no VCF file if there are no variants; so necessary.
+        print(f"Cannot find variant file at {vcf_path}.")
+        print(f"Assuming no variants.")
+        columns = ["chrom", "pos", "ref", "alt", "filter", "qual"]
+        columns += ["gt"] if add_genotypes else []
+        return pd.DataFrame(columns=columns)
 
     if callset is None:
         print(f"No variants found in file at {vcf_path}.")
