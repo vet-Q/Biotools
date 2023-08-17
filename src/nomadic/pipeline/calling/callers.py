@@ -149,12 +149,17 @@ class Clair3Singularity(VariantCaller):
     """
     Encapsulate Clair3; run via a singularity container
 
+    NB:
+    - We don't have the exact Guppy model
+    - This is specific for Slurm
+
     """
 
-    SIF_PATH = "tools/clair3_latest.sif"
+    SIF_PATH = "/u/jash/containers/clair3_latest.sif"
     BIND_DIRS = True
     THREADS = "4"
-    MODEL = "r941_prom_hac_g360+g422"
+    # MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_sup_g615" # SUP
+    MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_hac_g632"  # HAC
 
     def set_arguments(self, fasta_path):
         """
@@ -180,10 +185,13 @@ class Clair3Singularity(VariantCaller):
             os.makedirs(self.vcf_dir)
 
         # Collect directories
+        # NB: We need to include the model as well, if we are not using
+        # one within the container
         self.dirs = [
             os.path.dirname(self.bam_path),
             os.path.dirname(self.fasta_path),
             self.vcf_dir,
+            self.MODEL,
         ]
 
     def call_variants(self, sample_name=None):
@@ -201,7 +209,8 @@ class Clair3Singularity(VariantCaller):
         cmd += f" --ref_fn={self.fasta_path}"
         cmd += f" --threads={self.THREADS}"
         cmd += " --platform='ont'"
-        cmd += f" --model_path=/opt/models/{self.MODEL}"
+        # cmd += f" --model_path=/opt/models/{self.MODEL}"
+        cmd += f" --model_path={self.MODEL}"
         cmd += f" --output {self.vcf_dir}"
         cmd += " --include_all_ctgs"
         cmd += " --enable_phasing"
