@@ -23,3 +23,4 @@ conda activate nomadic2-fast
 nomadic qcbams -e $expt_dir -c $config --overview
 nomadic targets -e $expt_dir -c $config --overview
 nomadic find -e $expt_dir -c $config -m bcftools
+nomadic find -e $expt_dir -c $config -m clair3sing

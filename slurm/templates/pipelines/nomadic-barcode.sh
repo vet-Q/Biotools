@@ -26,3 +26,7 @@ nomadic remap -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
 nomadic qcbams -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
 nomadic targets -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
 nomadic call -e $expt_dir -c $config -m bcftools -b $SLURM_ARRAY_TASK_ID
+
+# To run Clair3 via Singularity, need to load singularity module
+module load singularity/link2apptainer
+nomadic call -e $expt_dir -c $config -m clair3sing -b $SLURM_ARRAY_TASK_ID
