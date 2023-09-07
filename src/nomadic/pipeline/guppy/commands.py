@@ -44,7 +44,7 @@ ONLY_PASS = True  # only demultiplex .fastq that pass guppy quality control
 @click.option(
     "-q",
     "--min_qscore",
-    type=click.Choice(BASECALL_METHODS),
+    type=int,
     default=12,
     help="Minimum Q-score for read to pass basecalling quality filter",
 )
@@ -97,7 +97,7 @@ def basecall(expt_dir, flow_cell, basecalling_method, min_qscore):
     "-k",
     "--barcoding_strategy",
     type=click.Choice(BARCODING_KIT_MAPPING),
-    default="native24",
+    default="R10_native96",
     help="Barcoding strategy, human-readable names that map to ONT kits.",
 )
 @click.option(
@@ -107,7 +107,14 @@ def basecall(expt_dir, flow_cell, basecalling_method, min_qscore):
     default=False,
     help="Require both ends to have barcode?",
 )
-def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
+@click.option(
+    "-s",
+    "--strict",
+    is_flag=True,
+    default=False,
+    help="Only classify barcodes if alignment score exceeds a strict threshold.",
+)
+def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends, strict):
     """
     Run guppy demultiplexing on .fastq files
 
@@ -120,7 +127,12 @@ def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
     input_dir = f"{expt_dir}/guppy/{basecalling_method}"
     if ONLY_PASS:
         fastq_input_dir = f"{input_dir}/pass"
-    output_dir = produce_dir(input_dir, "both_ends" if both_ends else "single_end")
+
+    dir_name = "both_ends" if both_ends else "single_end"
+    if strict:
+        dir_name += "_strict"
+
+    output_dir = produce_dir(input_dir, dir_name)
 
     # PRINT TO STDOUT
     print("Inputs")
@@ -128,11 +140,13 @@ def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
     print(f"  Basecalling method: {basecalling_method}")
     print(f"  Input directory: {input_dir}")
     if both_ends:
-        print(f"  Requiring both ends to be barcoded.")
+        print("  Requiring both ends to be barcoded.")
     else:
         print("  Requiring only one end to be barcoded.")
+    if strict:
+        print("  Implementing a strict barcode classification.")
     print(f"  Barcode kits: {barcode_kits}")
-    print(f"  Will run with standard configuration.")
+    print("  Will run with standard configuration.")
     print(f"  Output directory: {output_dir}")
     print("Done.")
     print("")
@@ -144,6 +158,7 @@ def barcode(expt_dir, basecalling_method, barcoding_strategy, both_ends):
         barcode_kits=barcode_kits,
         output_dir=output_dir,
         both_ends=both_ends,
+        strict=strict
     )
     print("Done.")
     print("")

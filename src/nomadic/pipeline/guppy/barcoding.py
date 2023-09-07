@@ -9,10 +9,11 @@ from nomadic.lib.generic import produce_dir
 
 
 BARCODING_KIT_MAPPING = {
-    "native24": "\"EXP-NBD104 EXP-NBD114\"",
+    "native24": '"EXP-NBD104 EXP-NBD114"',
     "native96": "EXP-NBD196",
     "rapid": "SQK-RBK004",
     "pcr": "SQK-PBK004",
+    "R10_native96": "SQK-NBD114-96",
 }
 
 
@@ -23,8 +24,14 @@ BARCODING_KIT_MAPPING = {
 
 
 def run_guppy_barcode(
-    fastq_input_dir, barcode_kits, output_dir, both_ends, load_module=True
-):
+    fastq_input_dir: str,
+    barcode_kits: str,
+    output_dir: str,
+    both_ends: bool = False,
+    strict: bool = False,
+    recursive: bool = False,
+    dry_run: bool = False,
+) -> None:
     """
     Run guppy demultiplexing
 
@@ -46,22 +53,26 @@ def run_guppy_barcode(
 
     """
 
-    cmd = ""
-    if load_module:
-        cmd += "module load ont-guppy/5.0.11_linux64 && "
-
     # Construct command
-    cmd += "guppy_barcoder"
+    cmd = "guppy_barcoder"
     cmd += " --device 'cuda:0'"
-    cmd += " --compress_fastq"
-    cmd += " --trim_barcodes"
     cmd += f" --barcode_kits {barcode_kits}"
     cmd += f" --input_path {fastq_input_dir}"
-    cmd += " --recursive"
-    cmd += f" --save_path {output_dir}"
-    cmd += " --disable_pings"
+    if recursive:
+        cmd += " ---recursive"
     if both_ends:
         cmd += " --require_barcodes_both_ends"
+    if strict:
+        cmd += " --min_score_barcode_front 90"
+        cmd += " --min_score_barcode_rear 90"
+    cmd += f" --save_path {output_dir}"
+    cmd += " --enable_trim_barcodes"
+    cmd += " --compress_fastq"
+    cmd += " --disable_pings"
+
+    if dry_run:
+        print(cmd)
+        return
 
     # Run
     subprocess.run(cmd, shell=True, check=True)
