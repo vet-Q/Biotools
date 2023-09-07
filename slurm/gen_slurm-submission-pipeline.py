@@ -78,7 +78,8 @@ def main(expt_dir: str, config: str, barcode: str, basecalling_method: str, barc
     # Prepare output directory
     expt_dir = Path(expt_dir)
     expt_name = expt_dir.name
-    output_dir = Path(produce_dir(RUNS_DIR, expt_name))
+    run_count = sum([1 for d in os.listdir(RUNS_DIR) if d.startswith(expt_name)])  # we may create multiple submission /w diff. settings
+    output_dir = Path(produce_dir(RUNS_DIR, f"{expt_name}-r{run_count}"))
 
     # Formatting arguments for guppy
     guppy_args = {
