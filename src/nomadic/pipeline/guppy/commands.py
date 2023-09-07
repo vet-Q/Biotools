@@ -1,6 +1,6 @@
 import click
 from nomadic.lib.generic import produce_dir
-from .basecalling import BASECALL_METHODS, run_guppy_basecaller
+from .basecalling import FLOW_CELLS, BASECALL_METHODS, run_guppy_basecaller
 from .barcoding import BARCODING_KIT_MAPPING, run_guppy_barcode
 
 
@@ -28,13 +28,27 @@ ONLY_PASS = True  # only demultiplex .fastq that pass guppy quality control
     help="Path to experiment directory.",
 )
 @click.option(
+    "-f",
+    "--flow_cell",
+    type=click.Choice(FLOW_CELLS),
+    default="R10",
+    help="Flow Cell chemistry.",
+)
+@click.option(
     "-m",
     "--basecalling_method",
     type=click.Choice(BASECALL_METHODS),
     default="hac",
     help="Basecalling method; super, high or fast accuracy.",
 )
-def basecall(expt_dir, basecalling_method):
+@click.option(
+    "-q",
+    "--min_qscore",
+    type=click.Choice(BASECALL_METHODS),
+    default=12,
+    help="Minimum Q-score for read to pass basecalling quality filter",
+)
+def basecall(expt_dir, flow_cell, basecalling_method, min_qscore):
     """
     Run guppy basecalling on an experiment
 
@@ -47,7 +61,9 @@ def basecall(expt_dir, basecalling_method):
     # Print to stdout
     print(f"Experiment dir: {expt_dir}")
     print(f"Input dir: {input_dir}")
+    print(f"Flow Cell: {flow_cell}")
     print(f"Basecalling method: {basecalling_method}")
+    print(f"Minimum Q-score: {min_qscore}")
     print(f"Output dir: {output_dir}")
 
     # Run guppy basecalling
