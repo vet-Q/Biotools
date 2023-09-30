@@ -13,6 +13,7 @@ from nomadic.pipeline.guppy.basecalling import BASECALL_METHODS
 GUPPY_PIPELINE = Path("slurm/templates/pipelines/nomadic-guppy.sh")
 BAR_PIPELINE = Path("slurm/templates/pipelines/nomadic-barcode.sh")
 EXPT_PIPELINE = Path("slurm/templates/pipelines/nomadic-experiment.sh")
+DWNSAMP_PIPELINE = Path("slurm/templates/pipelines/nomadic-call-downsample.sh")
 SUBMIT_PIPELINE = Path("slurm/templates/nomadic-submit.sh")
 RUNS_DIR = Path("slurm/runs")
 
@@ -97,6 +98,7 @@ def main(expt_dir: str, config: str, barcode: str, basecalling_method: str, barc
     load_format_write(GUPPY_PIPELINE, output_dir / GUPPY_PIPELINE.name, **guppy_args)
     load_format_write(BAR_PIPELINE, output_dir / BAR_PIPELINE.name, **pipe_args)
     load_format_write(EXPT_PIPELINE, output_dir / EXPT_PIPELINE.name, **pipe_args)
+    load_format_write(DWNSAMP_PIPELINE, output_dir / DWNSAMP_PIPELINE.name, **pipe_args)
 
     submission_path =  output_dir / SUBMIT_PIPELINE.name
     load_format_write(SUBMIT_PIPELINE, output_dir / SUBMIT_PIPELINE.name, run_dir=output_dir)
