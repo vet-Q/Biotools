@@ -158,8 +158,14 @@ class Clair3Singularity(VariantCaller):
     SIF_PATH = "/u/jash/containers/clair3_latest.sif"
     BIND_DIRS = True
     THREADS = "4"
+
+    # Guppy models
     # MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_sup_g615" # SUP
-    MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_hac_g632"  # HAC
+    # MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_hac_g632"  # HAC
+    
+    # Dorado models
+    MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_sup_v420"
+    # MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_fast_v420"
 
     def set_arguments(self, fasta_path):
         """
