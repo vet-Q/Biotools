@@ -1,7 +1,7 @@
 #!/bin/bash -l
-#SBATCH --job-name=nbar
-#SBATCH --output=logs/nbar/nbar-jid%A-%a.out
-#SBATCH --error=logs/nbar/nbar-jid%A-%a.err
+#SBATCH --job-name=ncalldown
+#SBATCH --output=logs/ncalldown/ncalldown-jid%A-%a.out
+#SBATCH --error=logs/ncalldown/ncalldown-jid%A-%a.err
 #SBATCH --chdir=./
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
