@@ -229,7 +229,14 @@ class Clair3Singularity(VariantCaller):
 
         # The next two steps are for consistency with other callers
         # Decompress output
-        cmd = f"bcftools view {self.vcf_dir}/phased_merge_output.vcf.gz -Ou -o {self.vcf_dir}/phased_merge_output.vcf"
+
+        # If no variants exist, Clair3 does NOT produce the VCF; need to abort.
+        clair3_vcf = f"{self.vcf_dir}/phased_merge_output.vcf.gz"
+        if not os.path.exists(clair3_vcf):
+            print("WARNING! Clair3 DID NOT GENERATE A VCF! Abortting with status code 1.")
+            return 1
+
+        cmd = f"bcftools view {clair3_vcf} -Ou -o {self.vcf_dir}/phased_merge_output.vcf"
         subprocess.run(cmd, check=True, shell=True)
 
         # Move VCF file

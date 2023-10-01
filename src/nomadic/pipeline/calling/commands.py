@@ -101,7 +101,7 @@ def call_all_reads(expt_dir, config, barcode, method):
                 vcf_path=vcf_path,
             )
             caller.set_arguments(fasta_path=reference.fasta_path)
-            caller.call_variants(sample_name=barcode)
+            caller.call_variants(sample_name=barcode)  # return True / False if it worked
             target_vcfs.append(vcf_path)
             print("Done.")
             print("")
@@ -194,14 +194,19 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                     vcf_path=vcf_path,
                 )
                 caller.set_arguments(fasta_path=reference.fasta_path)
-                caller.call_variants(sample_name=sample_name)
+                status = caller.call_variants(sample_name=sample_name)
                 print("Done.")
                 print("")
 
                 # Remove downsampled bam
                 bam_manager.remove_downsample()
 
-                # Store target VCF
+                # Store target VCF, if the file exists
+                # Specifically handling issues around Clair3
+                if status == 1:
+                    print(f"WARNING! Clair3 DID NOT GENERATE A VCF! Not appending {vcf_path} to target VCF list.")
+                    continue
+
                 target_vcfs.append(vcf_path)
 
             # Concatenate for `n_reads` and `ix`
