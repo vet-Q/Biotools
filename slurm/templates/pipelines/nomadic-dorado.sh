@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=dorado
-#SBATCH --output=logs/dorado-jid%A-%a.out
-#SBATCH --error=logs/dorado-jid%A-%a.err
+#SBATCH --output=logs/dorado/dorado-jid%A-%a.out
+#SBATCH --error=logs/dorado/dorado-jid%A-%a.err
 #SBATCH --chdir=./
 #SBATCH --ntasks=1
 # --------------------
@@ -29,7 +29,7 @@ POD5_DIR=$EXPT_DIR"/minknow"
 FASTQ_DIR=$EXPT_DIR"/dorado/"$ACCURACY
 FASTQ_PATH=$FASTQ_DIR/"dorado.called.fastq"
 
-mkdir -p $OUTPUT_DIR
+mkdir -p $FASTQ_DIR
 mkdir -p logs
 
 echo "-------------------------------------------------------------------"
@@ -81,3 +81,4 @@ echo "Done."
 echo ""
 
 echo "-------------------------------------------------------------------"
+
