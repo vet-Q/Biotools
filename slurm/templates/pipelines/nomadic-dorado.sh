@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=dorado
-#SBATCH --output=logs/dorado.out
-#SBATCH --error=logs/dorado.err
+#SBATCH --output=logs/dorado-jid%A-%a.out
+#SBATCH --error=logs/dorado-jid%A-%a.err
 #SBATCH --chdir=./
 #SBATCH --ntasks=1
 # --------------------
