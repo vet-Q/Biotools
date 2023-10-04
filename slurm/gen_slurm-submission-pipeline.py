@@ -11,6 +11,7 @@ from nomadic.pipeline.guppy.basecalling import BASECALL_METHODS
 
 
 GUPPY_PIPELINE = Path("slurm/templates/pipelines/nomadic-guppy.sh")
+DOR_PIPELINE = Path("slurm/templates/pipelines/nomadic-dorado.sh")
 BAR_PIPELINE = Path("slurm/templates/pipelines/nomadic-barcode.sh")
 EXPT_PIPELINE = Path("slurm/templates/pipelines/nomadic-experiment.sh")
 DWNSAMP_PIPELINE = Path("slurm/templates/pipelines/nomadic-call-downsample.sh")
@@ -92,9 +93,17 @@ def main(expt_dir: str, config: str, barcode: str, basecalling_method: str, barc
         "barcode_strict": "-s" if strict else "" 
     }
 
+    dor_args = {
+        "expt_dir": expt_dir, 
+        "config": config,
+        "basecalling_method": basecalling_method,
+        "barcoding_strategy": "SQK-NBD114-96",
+    }
+
     # Formatting arguments for the rest of nomadic pipeline
     pipe_args = {"expt_dir": expt_dir, "config": config, "array_str": array_str}
 
+    load_format_write(DOR_PIPELINE, output_dir / DOR_PIPELINE.name, **dor_args)
     load_format_write(GUPPY_PIPELINE, output_dir / GUPPY_PIPELINE.name, **guppy_args)
     load_format_write(BAR_PIPELINE, output_dir / BAR_PIPELINE.name, **pipe_args)
     load_format_write(EXPT_PIPELINE, output_dir / EXPT_PIPELINE.name, **pipe_args)
