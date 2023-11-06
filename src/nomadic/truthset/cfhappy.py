@@ -127,7 +127,8 @@ class HappyByDocker:
 
 class HappyBySingularity:
 
-    SIF_PATH = "tools/hap.py_v0.3.12.sif"
+    # Prepared for Raven
+    SIF_PATH = "/u/jash/containers/hap.py_v0.3.12.sif"
     SIF_CMD = "/opt/hap.py/bin/hap.py"
     BIND_DIRS = True
 
