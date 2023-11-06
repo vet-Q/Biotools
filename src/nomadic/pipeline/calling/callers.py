@@ -221,6 +221,11 @@ class Clair3Singularity(VariantCaller):
         cmd += " --include_all_ctgs"
         cmd += " --enable_phasing"
 
+        # This sends a large fraction of variants to the full
+        # alignment model
+        cmd += " --var_pct_full=0.8"
+        cmd += " --ref_pct_full=0.8"
+
         if sample_name is not None:
             cmd += f" --sample_name={sample_name}"
 
