@@ -4,7 +4,7 @@
 #SBATCH --error=logs/ncalldown/ncalldown-jid%A-%a.err
 #SBATCH --chdir=./
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=4
 #SBATCH --array {array_str}
 #SBATCH --mem=16GB
 #SBATCH --time=23:00:00
