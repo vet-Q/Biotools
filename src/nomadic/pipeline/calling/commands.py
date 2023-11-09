@@ -1,11 +1,12 @@
 import os
 import click
+import pandas as pd
 from itertools import product
 from nomadic.pipeline.cli import experiment_options, barcode_option
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.references import PlasmodiumFalciparum3D7
-from nomadic.lib.process_vcfs import bcftools_concat, bcftools_sort, bcftools_index
+from nomadic.lib.process_vcfs import bcftools_view, bcftools_concat, bcftools_sort, bcftools_index
 from nomadic.pipeline.calling.callers import caller_collection
 from .downsample import BamDownSampler
 
@@ -69,6 +70,12 @@ def call_all_reads(expt_dir, config, barcode, method):
     # Define reference genome
     reference = PlasmodiumFalciparum3D7()
 
+    # Target Amplicons
+    amplicon_path = "configs/beds/nomads8.amplicons.bed"
+    amplicon_df = pd.read_csv(amplicon_path, sep="\t", header=None)
+    amplicon_df.columns = ["chrom", "start", "end", "gene_name"]
+    amplicon_df.index = amplicon_df["gene_name"]
+
     # Focus on a single barcode, if specified
     if "focus_barcode" in params:
         params["barcodes"] = [params["focus_barcode"]]
@@ -102,7 +109,18 @@ def call_all_reads(expt_dir, config, barcode, method):
             )
             caller.set_arguments(fasta_path=reference.fasta_path)
             caller.call_variants(sample_name=barcode)  # return True / False if it worked
-            target_vcfs.append(vcf_path)
+
+            # Trim VCF to only include variants that are within the amplicon
+            # - This avoids retaining spurious calls caused by chimeric reads, or artefacts
+            # involving duplicated variants in adjacent genes
+            trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf"
+            amplicon_info = amplicon_df.loc[target_gene].squeeze()
+            bcftools_view(
+                input_vcf=vcf_path,
+                output_vcf=trimmed_vcf_path,
+                r=f"{amplicon_info['chrom']}:{amplicon_info['start']}-{amplicon_info['end']}" 
+            )
+            target_vcfs.append(trimmed_vcf_path)
             print("Done.")
             print("")
 
@@ -136,6 +154,12 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
 
     # Define reference genome
     reference = PlasmodiumFalciparum3D7()
+
+    # Target Amplicons
+    amplicon_path = "configs/beds/nomads8.amplicons.bed"
+    amplicon_df = pd.read_csv(amplicon_path, sep="\t", header=None)
+    amplicon_df.columns = ["chrom", "start", "end", "gene_name"]
+    amplicon_df.index = amplicon_df["gene_name"]
 
     # Focus on a single barcode, if specified
     if "focus_barcode" in params:
@@ -207,7 +231,17 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                     print(f"WARNING! Clair3 DID NOT GENERATE A VCF! Not appending {vcf_path} to target VCF list.")
                     continue
 
-                target_vcfs.append(vcf_path)
+                # Trim VCF to only include variants that are within the amplicon
+                # - This avoids retaining spurious calls caused by chimeric reads, or artefacts
+                # involving duplicated variants in adjacent genes
+                trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf"
+                amplicon_info = amplicon_df.loc[target_gene].squeeze()
+                bcftools_view(
+                    input_vcf=vcf_path,
+                    output_vcf=trimmed_vcf_path,
+                    r=f"{amplicon_info['chrom']}:{amplicon_info['start']}-{amplicon_info['end']}" 
+                )
+                target_vcfs.append(trimmed_vcf_path)
 
             # Concatenate for `n_reads` and `ix`
             print("Concatenating VCFs for all targets...")
