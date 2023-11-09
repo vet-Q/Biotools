@@ -1,6 +1,7 @@
 import os
 import click
 import pandas as pd
+import subprocess
 from itertools import product
 from nomadic.pipeline.cli import experiment_options, barcode_option
 from nomadic.lib.generic import print_header, print_footer, produce_dir
@@ -96,7 +97,7 @@ def call_all_reads(expt_dir, config, barcode, method):
 
             # Define input bam and output vcf
             bam_path = f"{input_dir}/reads.target.{target_gene}.bam"
-            vcf_path = f"{output_dir}/reads.target.{target_gene}.vcf"
+            vcf_path = f"{output_dir}/reads.target.{target_gene}.vcf.gz"
 
             # Select variant calling method
             print("Calling variants...")
@@ -113,8 +114,15 @@ def call_all_reads(expt_dir, config, barcode, method):
             # Trim VCF to only include variants that are within the amplicon
             # - This avoids retaining spurious calls caused by chimeric reads, or artefacts
             # involving duplicated variants in adjacent genes
-            trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf"
+            trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf.gz"
             amplicon_info = amplicon_df.loc[target_gene].squeeze()
+
+            # I have to bgzip
+            # and then re-index
+            # super annoying
+            # Can't I just output zipped? Why haven't I been?
+
+
             bcftools_view(
                 input_vcf=vcf_path,
                 output_vcf=trimmed_vcf_path,
@@ -205,7 +213,7 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                 print("")
 
                 # Define output vcf
-                vcf_fn = f"{sample_name}.{target_gene}.vcf"
+                vcf_fn = f"{sample_name}.{target_gene}.vcf.gz"
                 vcf_path = f"{output_dir}/{vcf_fn}"
 
                 # Select variant calling method
@@ -234,7 +242,7 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                 # Trim VCF to only include variants that are within the amplicon
                 # - This avoids retaining spurious calls caused by chimeric reads, or artefacts
                 # involving duplicated variants in adjacent genes
-                trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf"
+                trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf.gz"
                 amplicon_info = amplicon_df.loc[target_gene].squeeze()
                 bcftools_view(
                     input_vcf=vcf_path,

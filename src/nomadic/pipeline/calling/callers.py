@@ -103,7 +103,7 @@ class BcfTools(VariantCaller):
         cmd += f" -f {self.fasta_path}"
         cmd += f" {self.bam_path}"
         cmd += " | bcftools call -cv"  # consensus calling
-        cmd += f" -Ou -o {self.vcf_path}"
+        cmd += f" -Oz -o {self.vcf_path}"
 
         subprocess.run(cmd, shell=True, check=True)
 
@@ -223,8 +223,8 @@ class Clair3Singularity(VariantCaller):
 
         # This sends a large fraction of variants to the full
         # alignment model
-        cmd += " --var_pct_full=0.8"
-        cmd += " --ref_pct_full=0.8"
+        cmd += " --var_pct_full=0.5"
+        cmd += " --ref_pct_full=0.5"
 
         if sample_name is not None:
             cmd += f" --sample_name={sample_name}"
@@ -241,11 +241,12 @@ class Clair3Singularity(VariantCaller):
             print("WARNING! Clair3 DID NOT GENERATE A VCF! Abortting with status code 1.")
             return 1
 
-        cmd = f"bcftools view {clair3_vcf} -Ou -o {self.vcf_dir}/phased_merge_output.vcf"
-        subprocess.run(cmd, check=True, shell=True)
+        # cmd = f"bcftools view {clair3_vcf} -Ou -o {self.vcf_dir}/phased_merge_output.vcf"
+        # subprocess.run(cmd, check=True, shell=True)
 
         # Move VCF file
-        shutil.copyfile(f"{self.vcf_dir}/phased_merge_output.vcf", self.vcf_path)
+        shutil.copyfile(clair3_vcf, self.vcf_path)
+        #shutil.copyfile(f"{self.vcf_dir}/phased_merge_output.vcf", self.vcf_path)
         shutil.copyfile(
             f"{self.vcf_dir}/phased_merge_output.vcf.gz.tbi", f"{self.vcf_path}.tbi"
         )
