@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
-from nomadic.lib.process_vcfs import bcftools_reheader
+from nomadic.lib.process_vcfs import bcftools_reheader, bcftools_index
 
 
 # ================================================================
@@ -122,6 +122,8 @@ class BcfTools(VariantCaller):
 
         if sample_name is not None:
             bcftools_reheader(self.vcf_path, self.vcf_path, [sample_name])
+
+        bcftools_index(self.vcf_path)
 
 
 class GatkHaplotypeCaller(VariantCaller):
