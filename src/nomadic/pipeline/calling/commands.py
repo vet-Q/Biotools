@@ -72,6 +72,7 @@ def call_all_reads(expt_dir, config, barcode, method):
     reference = PlasmodiumFalciparum3D7()
 
     # Target Amplicons
+    # TODO: should be input argument
     amplicon_path = "configs/beds/nomads8.amplicons.bed"
     amplicon_df = pd.read_csv(amplicon_path, sep="\t", header=None)
     amplicon_df.columns = ["chrom", "start", "end", "gene_name"]
@@ -116,19 +117,13 @@ def call_all_reads(expt_dir, config, barcode, method):
             # involving duplicated variants in adjacent genes
             trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf.gz"
             amplicon_info = amplicon_df.loc[target_gene].squeeze()
-
-            # I have to bgzip
-            # and then re-index
-            # super annoying
-            # Can't I just output zipped? Why haven't I been?
-
-
             bcftools_view(
                 input_vcf=vcf_path,
                 output_vcf=trimmed_vcf_path,
                 r=f"{amplicon_info['chrom']}:{amplicon_info['start']}-{amplicon_info['end']}" 
             )
             target_vcfs.append(trimmed_vcf_path)
+            os.remove(vcf_path) # we don't need the untrimmed version
             print("Done.")
             print("")
 
@@ -242,7 +237,7 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                 # Trim VCF to only include variants that are within the amplicon
                 # - This avoids retaining spurious calls caused by chimeric reads, or artefacts
                 # involving duplicated variants in adjacent genes
-                trimmed_vcf_path = f"{output_dir}/reads.target.{target_gene}.trimmed.vcf.gz"
+                trimmed_vcf_path = f"{output_dir}/{sample_name}.{target_gene}.trimmed.vcf.gz"
                 amplicon_info = amplicon_df.loc[target_gene].squeeze()
                 bcftools_view(
                     input_vcf=vcf_path,
@@ -250,6 +245,7 @@ def call_with_downsample(expt_dir, config, barcode, method, reads, iterations):
                     r=f"{amplicon_info['chrom']}:{amplicon_info['start']}-{amplicon_info['end']}" 
                 )
                 target_vcfs.append(trimmed_vcf_path)
+                os.remove(vcf_path) # we don't need the untrimmed version
 
             # Concatenate for `n_reads` and `ix`
             print("Concatenating VCFs for all targets...")
