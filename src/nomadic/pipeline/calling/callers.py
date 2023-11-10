@@ -24,6 +24,17 @@ class VariantCaller(ABC):
         self.vcf_path = None
 
     def set_files(self, bam_path, vcf_path):
+        """
+        Set the input BAM file `bam_path` and output VCF file `vcf_path`
+
+        """
+
+        if not bam_path.endswith(".bam"):
+            raise ValueError(f"Specified BAM file f{bam_path} does not end with `.bam` suffix.")
+        
+        if not vcf_path.endswith(".vcf.gz"):
+            raise ValueError("Please specify a compressed VCF file output, ending with `.vcf.gz`.")
+
         self.bam_path = bam_path
         self.vcf_path = vcf_path
 
@@ -36,6 +47,8 @@ class VariantCaller(ABC):
         """
         Call variants, optionally naming sample in
         output VCF file
+
+        Note that output VCF file should be compressed
 
         """
         pass
@@ -103,7 +116,7 @@ class BcfTools(VariantCaller):
         cmd += f" -f {self.fasta_path}"
         cmd += f" {self.bam_path}"
         cmd += " | bcftools call -cv"  # consensus calling
-        cmd += f" -Oz -o {self.vcf_path}"
+        cmd += f" -Oz -o {self.vcf_path}"  # output compressed
 
         subprocess.run(cmd, shell=True, check=True)
 
@@ -184,7 +197,7 @@ class Clair3Singularity(VariantCaller):
         self.vcf_path = os.path.abspath(self.vcf_path)
 
         # clair3 outputs to a directory, not a file
-        self.vcf_dir = self.vcf_path.replace(".vcf", "")
+        self.vcf_dir = self.vcf_path.replace(".vcf.gz", "")
 
         # Create if doesn't exist, helps with mounting (-B)
         if not os.path.exists(self.vcf_dir):
@@ -221,10 +234,10 @@ class Clair3Singularity(VariantCaller):
         cmd += " --include_all_ctgs"
         cmd += " --enable_phasing"
 
-        # This sends a large fraction of variants to the full
-        # alignment model
-        cmd += " --var_pct_full=0.5"
-        cmd += " --ref_pct_full=0.5"
+        # Send all variants to the full alignment model,
+        # at least theoretically maximising performance
+        cmd += " --var_pct_full=1.0"
+        cmd += " --ref_pct_full=1.0"
 
         if sample_name is not None:
             cmd += f" --sample_name={sample_name}"
