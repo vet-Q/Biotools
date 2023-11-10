@@ -66,7 +66,7 @@ def find(expt_dir, config, method):
         for target_id, gene_name in params["name_dt"].items():
 
             # Load VCF (probably need a method argument)
-            vcf_path = f"{params['barcodes_dir']}/{barcode}/calling/{method}/reads.target.{gene_name}.vcf"
+            vcf_path = f"{params['barcodes_dir']}/{barcode}/calling/{method}/reads.target.{gene_name}.trimmed.vcf.gz"
             vcf_df = load_vcf_using_allel(vcf_path)
 
             # Extract gene of interets
