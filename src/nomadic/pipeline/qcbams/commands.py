@@ -193,7 +193,7 @@ def qcbams_individual(expt_dir, config, barcode):
         hs_alignments_df.insert(0, "species", "hs")
 
         # Combine all alignments
-        alignments_df = pd.concat([pf_alignments_df, hs_alignments_df])
+        alignments_df = pd.concat([pf_alignments_df, hs_alignments_df], axis=0)
 
         # Produce a read-level data frame
         print("Processing...")

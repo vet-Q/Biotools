@@ -1,7 +1,7 @@
 import pysam
 import pandas as pd
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 # ================================================================
@@ -70,5 +70,12 @@ def load_alignment_information(input_bam: str) -> pd.DataFrame:
         results = [
             AlignmentSummary.from_pysam_aligned_segment(segment) for segment in bam
         ]
+
+    # We need to make sure, in the case of no reads, we still produce a dataframe
+    # with correct column names and types; or types get coerced later on
+    if not results:
+        column_types = {f.name: f.type for f in fields(AlignmentSummary)}
+        empty_df = pd.DataFrame(results, columns=column_types).astype(column_types)
+        return empty_df
 
     return pd.DataFrame(results)
