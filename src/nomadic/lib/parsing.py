@@ -122,7 +122,10 @@ def add_metadata(args, include_unclassified=False):
     for rc in required_columns:
         if not rc in args.metadata.columns:
             raise MetadataError(f"Metadata file {metadata_path} must have a {rc} column.")
+        if args.metadata[rc].isna().any():
+            raise MetadataError(f"All entries in {rc} column must be populated, but found empty values.")
         if not len(args.metadata[rc]) == len(args.metadata[rc].unique()):
-            raise MetadataError(f"All entries in {rc} column must be unique.")
+            duplicates = ",".join([str(s) for s in args.metadata[rc][args.metadata[rc].duplicated()]])
+            raise MetadataError(f"All entries in {rc} column must be unique. Found the following duplicates: {duplicates}.")
 
     return args
