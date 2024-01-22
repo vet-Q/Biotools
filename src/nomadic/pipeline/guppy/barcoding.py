@@ -14,6 +14,7 @@ BARCODING_KIT_MAPPING = {
     "rapid": "SQK-RBK004",
     "pcr": "SQK-PBK004",
     "R10_native96": "SQK-NBD114-96",
+    "R10_rapid96": "SQK-RBK114-96"
 }
 
 
