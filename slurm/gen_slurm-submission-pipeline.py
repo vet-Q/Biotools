@@ -97,7 +97,7 @@ def main(expt_dir: str, config: str, barcode: str, basecalling_method: str, barc
         "expt_dir": expt_dir, 
         "config": config,
         "basecalling_method": basecalling_method,
-        "barcoding_strategy": "SQK-NBD114-96",
+        "barcoding_strategy": barcoding_strategy
     }
 
     # Formatting arguments for the rest of nomadic pipeline
