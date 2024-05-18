@@ -1,6 +1,7 @@
 import os
 import urllib.request
 from abc import ABC, abstractmethod
+from nomadic.lib.process_gffs import load_gff
 
 
 # ================================================================
@@ -23,6 +24,12 @@ class Reference(ABC):
         self.fasta_path = None
         self.gff_path = None
 
+    @property
+    def gff_standard_path(self):
+        if self.gff_path is None:
+            return None
+        return self.gff_path.replace(".gff", ".standardised.gff")
+
     @abstractmethod
     def set_fasta(self):
         pass
@@ -40,7 +47,7 @@ class PlasmoDB(Reference):
 
     source = "plasmodb"
     source_url = "https://plasmodb.org/common/downloads"
-    release = 52
+    release = 67
 
     def __init__(self, species, strain):
         self.species = species
@@ -181,7 +188,7 @@ class ReferenceDownloader:
 
     def download_fasta(self):
         if self.ref.fasta_path and not self.exists_locally(self.ref.fasta_path):
-            print("Downloading...")
+            print("Downloading FASTA...")
             self.produce_dir(self.ref.fasta_path)
             urllib.request.urlretrieve(
                 url=self.ref.fasta_url, filename=self.ref.fasta_path
@@ -191,14 +198,41 @@ class ReferenceDownloader:
         else:
             print("Already downloaded.")
 
-    def download_gff(self):
+    def download_gff(self, standardise: bool = True):
         if self.ref.gff_path and not self.exists_locally(self.ref.gff_path):
-            print("Downloading...")
+            print("Downloading GFF...")
             self.produce_dir(self.ref.gff_path)
             urllib.request.urlretrieve(url=self.ref.gff_url, filename=self.ref.gff_path)
             print("Done.")
         else:
             print("Already downloaded.")
+        if standardise:
+            print("Standardising GFF...")
+            self._standardise_gff(self.ref.gff_path)
+
+    def _standardise_gff(self, gff_path: str):
+        """
+        Try to standardise the GFF file into GFF3 format
+
+        """
+        
+        # Settings
+        KEEP_FIELDS = ["protein_coding_gene", "mRNA", "exon", "CDS"]
+        to_gff3 = {
+            "protein_coding_gene": "gene",
+            "mRNA": "transcript"
+        }
+
+        # Standardise
+        gff_df = load_gff(gff_path)
+        gff_df.query("feature in @KEEP_FIELDS", inplace=True)
+        gff_df["feature"] = [
+            to_gff3[f] if f in to_gff3 else f
+            for f in gff_df["feature"]
+        ]
+
+        # Write to 'standardised' path
+        gff_df.to_csv(self.ref.gff_standard_path, sep="\t", index=False, header=False)
 
 
 # ================================================================
@@ -212,9 +246,9 @@ references = [
     PlasmodiumFalciparumDd2(),
     PlasmodiumFalciparumHB3(),
     PlasmodiumFalciparumGB4(),
-    PlasmodiumOvale(),
-    PlasmodiumMalariae(),
-    HomoSapiens()
+    #PlasmodiumMalariae(),
+    #PlasmodiumOvale(),
+    #HomoSapiens()
 ]
 reference_collection = {
     ref.name: ref for ref in references
