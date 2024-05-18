@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
+from nomadic.lib.generic import produce_dir
 from nomadic.lib.process_vcfs import bcftools_reheader, bcftools_index
 
 
@@ -101,6 +102,94 @@ class BcfTools(VariantCaller):
         subprocess.run(cmd, check=True, shell=True)
 
 
+class Clair3Singularity(VariantCaller):
+    """
+    Run Clair3 using Singularity
+
+    Note that Singularity only runs natively on Linux
+
+    """
+
+    SIF_PATH = "/u/jash/containers/clair3_latest.sif"
+
+    # In theory, the model should match the version of the basecalling
+    # software (guppy/dorado) that was used
+    MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_sup_v420"
+
+    def _mount_dirs(self, bam_path: str, vcf_path: str) -> None:
+        """
+        Prepare all directories and path names for mounting
+
+        """
+        self.bam_path = os.path.abspath(bam_path)
+        self.vcf_path = os.path.abspath(vcf_path)
+        self.fasta_path = os.path.abspath(self.fasta_path)
+
+        # Clair3 outputs to a directory, not a file
+        # - create if doesn't exist, helps with mounting (-B)
+        self.vcf_dir = produce_dir(self.vcf_path.replace(".vcf.gz", ""))
+
+        # Collect directories
+        # NB: We need to include the model as well, if we are not using
+        # one within the container
+        self.dirs = [
+            os.path.dirname(self.bam_path),
+            os.path.dirname(self.fasta_path),
+            self.vcf_dir,
+            self.MODEL,
+        ]
+
+    def _run(self, bam_path: str, vcf_path: str, sample_name: str = None) -> None:
+
+        # Prepare all directories and path names for mounting
+        self._mount_dirs(bam_path, vcf_path)
+
+        # Build command
+        cmd = f"singularity exec"
+        cmd += f" {' '.join([f'-B {d}' for d in self.dirs])}"
+        cmd += f" {self.SIF_PATH} /opt/bin/run_clair3.sh"
+        cmd += f" --bam_fn={self.bam_path}"
+        cmd += f" --ref_fn={self.fasta_path}"
+        cmd += f" --threads='4'"
+        cmd += " --platform='ont'"
+        # cmd += f" --model_path=/opt/models/{self.MODEL}"
+        cmd += f" --model_path={self.MODEL}"
+        cmd += f" --output {self.vcf_dir}"
+        cmd += " --include_all_ctgs"
+        cmd += " --enable_phasing"
+
+        # Send all variants to the full alignment model,
+        # at least theoretically maximising performance
+        cmd += " --var_pct_full=1.0"
+        cmd += " --ref_pct_full=1.0"
+
+        if sample_name is not None:
+            cmd += f" --sample_name={sample_name}"
+
+        # Run
+        subprocess.run(cmd, check=True, shell=True)
+
+        # Move final VCF file produced by Clair3 to `vcf_path`
+        clair3_vcf = f"{self.vcf_dir}/phased_merge_output.vcf.gz"
+        shutil.copyfile(clair3_vcf, self.vcf_path)
+        shutil.copyfile(clair3_vcf + ".tbi", self.vcf_path + ".tbi")
+
+        # Now, let's filter and fill tags
+        cmd_filter = "bcftools view"
+        cmd_filter += " --min-alleles 2"
+        cmd_filter += " --max-alleles 2"
+        cmd_filter += " --types='snps'"
+        cmd_filter += (
+            f" -e 'FORMAT/DP<{self.MIN_DEPTH}||QUAL<{self.MIN_QUAL}' {self.vcf_path}"
+        )
+
+        cmd_tags = f"bcftools +fill-tags -Oz -o {self.vcf_path} - -- -t FORMAT/VAF"
+
+        cmd = f"{cmd_filter} | {cmd_tags}"
+
+        subprocess.run(cmd, check=True, shell=True)
+
+
 # ================================================================
 # Define collection of available callers
 #
@@ -108,6 +197,4 @@ class BcfTools(VariantCaller):
 
 
 # Note, they are already initialised
-caller_collection = {
-    "bcftools": BcfTools,
-}
+caller_collection = {"bcftools": BcfTools, "clair3_singularity": Clair3Singularity}
