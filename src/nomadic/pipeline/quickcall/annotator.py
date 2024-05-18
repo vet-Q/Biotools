@@ -14,23 +14,51 @@ from nomadic.lib.references import Reference
 #
 # ================================================================
 
-
 @dataclass
 class Consequence:
-    """
-    Encapsulate consequence information from  `bcftools csq`
-
-    """
-
     csq: str
     target_gene: str
     transcript: str
     biotype: str
 
-    strand: str = ""
-    aa_change: str = ""
-    nt_change: str = ""
-
+    # Optional, assigned only if within coding sequence
+    strand: str = None
+    aa_change: str = None
+    nt_change: str = None
+    
+    # Optional, assigned only if aa_change exists
+    concise_aa_change: str = None
+    aa_pos: int = -1 # too keep column int in pandas
+        
+    def __post_init__(self):
+        """
+        Clean `aa_change` and `aa_pos`
+        
+        """
+        if self.aa_change is None:
+            return
+        
+        AAs = "ARNDCEQGHILKMFPSTWYV"
+        stop = "\*"
+        match = re.match(
+            f"([0-9]+)([{AAs}|{stop}])(?:>[0-9]+([{AAs}|{stop}]))?", self.aa_change
+        )
+        
+        if match is None:
+            warnings.warn(
+                f"Unable to parse AA change for: {self.aa_change}."
+            )
+            return
+        
+        aa_pos, from_aa, to_aa = match.groups()
+        self.aa_pos = int(aa_pos)
+        
+        # Handle synonymous case
+        if to_aa is None:
+            to_aa = from_aa
+        
+        self.concise_aa_change = f"{from_aa}{aa_pos}{to_aa}"
+        
     @classmethod
     def from_string(cls, csq_string: str):
         """
@@ -59,70 +87,114 @@ class Consequence:
 
         return cls(*fields)
 
-    # def _parse_aa_change(self) -> Tuple[int, str, str]:
-    #     """
-    #     Parse the AA encoding from `bcftools cqs` into a tuple
-    #     containing the reference AA, codon, and alternative AA
+# @dataclass
+# class Consequence:
+#     """
+#     Encapsulate consequence information from  `bcftools csq`
 
-    #     """
-    #     if not self.aa_change:
-    #         return self.aa_change
+#     """
 
-    #     AAs = "ARNDCEQGHILKMFPSTWYV"
-    #     stop = "\*"
-    #     match = re.match(f"([0-9]+)([{AAs}|{stop}]+)>[0-9]+([{AAs}|{stop}]+)", self.aa_change)
+#     csq: str
+#     target_gene: str
+#     transcript: str
+#     biotype: str
 
-    #     if match is None: # Handle syonymous
-    #         if self.csq != "synonymous":
-    #             warnings.warn(f"Unable to parse AA change for: {self}. Returning as-is.")
-    #         return self.aa_change
+#     strand: str = ""
+#     aa_change: str = ""
+#     nt_change: str = ""
 
-    #     pos, from_aa, to_aa = match.groups()
-    #     if from_aa is None:
-    #         from_aa = to_aa
+#     @classmethod
+#     def from_string(cls, csq_string: str):
+#         """
+#         Parse from the output string
 
-    #     return (pos, from_aa, to_aa)
+#         What to do if "double"?
+#         Or @
+#         Or *
 
-    # def get_aa_pos(self) -> int:
-    #     fields = self._parse_aa_change()
-    #     if not fields:
-    #         return None
-    #     return int(fields[0])
+#         """
+#         if csq_string == ".":  # intergenic
+#             return cls(".", ".", ".", ".")
 
-    # def get_concise_aa_change(self) -> str:
-    #     fields = self._parse_aa_change()
-    #     if not fields:
-    #         return None
-    #     return f"{fields[1]}{fields[0]}{fields[2]}"
+#         if csq_string.startswith("@"):  # compound variety, recorded elsewhere
+#             return cls(".", ".", ".", f"compound{csq_string}")
 
-    def get_concise_aa_change(self) -> str:
-        """
-        Get a more concise encoding of the amino acid change
+#         consequences = csq_string.split(",")
+#         if len(consequences) > 1:
+#             warnings.warn(
+#                 f"Found multiple consequences of variant: {csq_string}! Keeping only first."
+#             )
 
-        TODO:
-        - Want to add AA on both side of synonyms. Should be doable.
+#         fields = consequences[0].split("|")
+#         assert len(fields) >= 4, f"Failed for {csq_string}"
+#         assert len(fields) <= 7, f"Failed for {csq_string}"
 
-        """
+#         return cls(*fields)
 
-        if not self.aa_change:
-            return self.aa_change
+#     # def _parse_aa_change(self) -> Tuple[int, str, str]:
+#     #     """
+#     #     Parse the AA encoding from `bcftools cqs` into a tuple
+#     #     containing the reference AA, codon, and alternative AA
 
-        AAs = "ARNDCEQGHILKMFPSTWYV"
-        stop = "\*"
-        match = re.match(
-            f"([0-9]+)([{AAs}|{stop}]+)>[0-9]+([{AAs}|{stop}]+)", self.aa_change
-        )
+#     #     """
+#     #     if not self.aa_change:
+#     #         return self.aa_change
 
-        if match is None:
-            if self.csq != "synonymous":
-                warnings.warn(
-                    f"Unable to parse AA change for: {self}. Returning as-is."
-                )
-            return self.aa_change
+#     #     AAs = "ARNDCEQGHILKMFPSTWYV"
+#     #     stop = "\*"
+#     #     match = re.match(f"([0-9]+)([{AAs}|{stop}]+)>[0-9]+([{AAs}|{stop}]+)", self.aa_change)
 
-        pos, from_aa, to_aa = match.groups()
+#     #     if match is None: # Handle syonymous
+#     #         if self.csq != "synonymous":
+#     #             warnings.warn(f"Unable to parse AA change for: {self}. Returning as-is.")
+#     #         return self.aa_change
 
-        return f"{from_aa}{pos}{to_aa}"
+#     #     pos, from_aa, to_aa = match.groups()
+#     #     if from_aa is None:
+#     #         from_aa = to_aa
+
+#     #     return (pos, from_aa, to_aa)
+
+#     # def get_aa_pos(self) -> int:
+#     #     fields = self._parse_aa_change()
+#     #     if not fields:
+#     #         return None
+#     #     return int(fields[0])
+
+#     # def get_concise_aa_change(self) -> str:
+#     #     fields = self._parse_aa_change()
+#     #     if not fields:
+#     #         return None
+#     #     return f"{fields[1]}{fields[0]}{fields[2]}"
+
+#     def get_concise_aa_change(self) -> str:
+#         """
+#         Get a more concise encoding of the amino acid change
+
+#         TODO:
+#         - Want to add AA on both side of synonyms. Should be doable.
+
+#         """
+
+#         if not self.aa_change:
+#             return self.aa_change
+
+#         AAs = "ARNDCEQGHILKMFPSTWYV"
+#         stop = "\*"
+#         match = re.match(
+#             f"([0-9]+)([{AAs}|{stop}]+)>[0-9]+([{AAs}|{stop}]+)", self.aa_change
+#         )
+
+#         if match is None:
+#             if self.csq != "synonymous":
+#                 warnings.warn(
+#                     f"Unable to parse AA change for: {self}. Returning as-is."
+#                 )
+#             return self.aa_change
+
+#         pos, from_aa, to_aa = match.groups()
+
+#         return f"{from_aa}{pos}{to_aa}"
 
 
 # ================================================================
@@ -213,7 +285,7 @@ class VariantAnnotator:
         }
         called = {"gt": "GT", "dp": "DP", "wsaf": "VAF"}
 
-        sep = "\\t"
+        sep = "\t"
         cmd_header = (
             f" echo '{sep.join(list(fixed) + list(called))}\n' > {self.output_tsv}"
         )
@@ -240,16 +312,17 @@ class VariantAnnotator:
         df = pd.read_csv(self.output_tsv, sep="\t")
         csqs = [Consequence.from_string(c) for c in df["consequence"]]
         if csqs:
-            mut_type, aa_change, strand = zip(
-                *[(c.csq, c.get_concise_aa_change(), c.strand) for c in csqs]
+            mut_type, aa_change, aa_pos, strand = zip(
+                *[(c.csq, c.concise_aa_change, c.aa_pos, c.strand) for c in csqs]
             )
         else:
             print(f"No mutations passed quality control for {self.barcode_name}.")
-            mut_type, aa_change, strand = None, None, None
+            mut_type, aa_change, aa_pos, strand = None, None, None, None
 
         df.insert(6, "mut_type", mut_type)
         df.insert(7, "aa_change", aa_change)
-        df.insert(8, "strand", strand)
+        df.insert(8, "aa_pos", aa_pos)
+        df.insert(9, "strand", strand)
         df.drop("consequence", axis=1, inplace=True)
         df.to_csv(self.output_tsv, sep="\t", index=False)
 
