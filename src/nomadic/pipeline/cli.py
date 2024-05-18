@@ -75,6 +75,7 @@ from .calling.commands import call
 from .find.commands import find
 from .error.commands import error
 from .depth.commands import depth
+from .quickcall.commands import quickcall
 
 cli.add_command(basecall)
 cli.add_command(barcode)
@@ -86,6 +87,7 @@ cli.add_command(call)
 cli.add_command(find)
 cli.add_command(error)
 cli.add_command(depth)
+cli.add_command(quickcall)
 
 from .bmrc.commands import bmrc
 
