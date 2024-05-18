@@ -81,7 +81,7 @@ def bcftools_index(input_vcf):
 
     """
 
-    cmd = f"bcftools index {input_vcf}"
+    cmd = f"bcftools index -f {input_vcf}"
     subprocess.run(cmd, shell=True, check=True)
 
 
