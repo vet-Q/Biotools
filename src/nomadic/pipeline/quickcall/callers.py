@@ -115,6 +115,8 @@ class Clair3Singularity(VariantCaller):
     # In theory, the model should match the version of the basecalling
     # software (guppy/dorado) that was used
     MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_sup_v420"
+    MIN_DEPTH = 40
+    MIN_QUAL = 20
 
     def _mount_dirs(self, bam_path: str, vcf_path: str) -> None:
         """
