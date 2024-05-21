@@ -1,13 +1,24 @@
+import os
+import warnings
 from nomadic.lib.generic import print_header, print_footer, produce_dir
 from nomadic.lib.parsing import build_parameter_dict
 from nomadic.lib.references import PlasmodiumFalciparum3D7
 from .callers import caller_collection
 from .annotator import VariantAnnotator
+from .merger import VariantMerger
+
 
 # from nomadic.lib.process_vcfs import bcftools_view, bcftools_concat, bcftools_sort, bcftools_index
 
+def quickcall(expt_dir: str, config: str, barcode: str, bed_path: str, method: str, overview: bool=False) -> None:
+    if overview:
+        quickcall_merge(expt_dir, config, bed_path, method)
+    else:
+        quickcall_single(expt_dir, config, barcode, bed_path, method)
 
-def quickcall(expt_dir: str, config: str, barcode: str, bed_path: str, method: str) -> None:
+
+
+def quickcall_single(expt_dir: str, config: str, barcode: str, bed_path: str, method: str) -> None:
     """
     Effectively an improved approach to variant calling
     vs. the old `call`
@@ -45,7 +56,7 @@ def quickcall(expt_dir: str, config: str, barcode: str, bed_path: str, method: s
 
         # Path to *complete* bam file
         bam_path = f"{input_dir}/{barcode}.{reference.name}.final.sorted.bam"
-        vcf_path = f"{output_dir}/{barcode}.{reference.name}.{method}.vcf.gz"
+        vcf_path = f"{output_dir}/{barcode}.{reference.name}.{method}.unfiltered.vcf.gz"
 
         # TODO:
         # -> I *could* and probably *should* filter at this point
@@ -59,11 +70,14 @@ def quickcall(expt_dir: str, config: str, barcode: str, bed_path: str, method: s
         print("Done.")
         print("")
 
-        # That's it!
-        # We *may* want to just put annotation here, for simplicity
+        print("Filtering variants...")
+        filtered_vcf = vcf_path.replace(".unfiltered.vcf.gz", ".filtered.vcf.gz")
+        caller.filter(output_vcf=filtered_vcf)
+
+        # Annotation
         print("Annotating variants...")
         annotator = VariantAnnotator(
-            vcf_path,
+            filtered_vcf, # Note that we annotated only filtered VCF
             bed_path,
             reference,
             output_dir=output_dir
@@ -72,5 +86,61 @@ def quickcall(expt_dir: str, config: str, barcode: str, bed_path: str, method: s
         annotator.convert_to_tsv()
         print("Done.")
         print("")
+
+    print_footer(t0)
+
+
+
+def quickcall_merge(expt_dir: str, config: str, bed_path: str, method: str) -> None:
+    """
+    Merge the VCF files and write a final TSV
+    
+    """
+    # PARSE INPUTS
+    script_descrip = "NOMADIC: Merge quick variant calls across experiment"
+    t0 = print_header(script_descrip)
+    params = build_parameter_dict(expt_dir, config)
+    script_dir = f"quickcall/{method}"  # this will be easier to iterate overs
+    output_dir = produce_dir(params["nomadic_dir"], script_dir)
+
+    # Define reference genome
+    reference = PlasmodiumFalciparum3D7()
+
+    # Iterate over barcodes
+    vcfs = []
+    for barcode in params["barcodes"]:
+        # Define input and output directory
+        print("-" * 80)
+        print(f"Running {method} for: {barcode}")
+        barcode_dir = f"{params['barcodes_dir']}/{barcode}"
+        input_dir = f"{barcode_dir}/quickcall/{method}"
+
+        # Path to *complete* bam file
+        vcf_path = f"{input_dir}/{barcode}.{reference.name}.{method}.unfiltered.vcf.gz"
+
+        if os.path.exists(vcf_path):
+            vcfs.append(vcf_path)
+        else:
+            warnings.warn(f"No VCF file found at {vcf_path}! Skipping.")
+
+    print(f"Found {len(vcfs)} total.")
+
+    # Merging
+    output_vcf = f"{output_dir}/merged.vcf.gz"
+    merger = VariantMerger(vcfs)
+    merger.run(output_vcf)
+
+    # Annotation
+    print("Annotating variants...")
+    annotator = VariantAnnotator(
+        output_vcf, # Note that we annotated only filtered VCF
+        bed_path,
+        reference,
+        output_dir=output_dir
+    )
+    annotator.run()
+    annotator.convert_to_tsv()
+    print("Done.")
+    print("")
 
     print_footer(t0)

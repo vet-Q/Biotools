@@ -15,6 +15,7 @@ from nomadic.lib.process_vcfs import bcftools_reheader, bcftools_index
 class VariantCaller(ABC):
     def __init__(self, fasta_path: str) -> None:
         self.fasta_path = fasta_path
+        self.vcf_path = None
 
     @abstractmethod
     def _run(self, bam_path: str, vcf_path: str) -> None:
@@ -43,6 +44,29 @@ class VariantCaller(ABC):
         # Index
         bcftools_index(self.vcf_path)
 
+    def filter(self, output_vcf: str, min_depth: int = 50, min_qual: int = 20) -> None:
+        """
+        Filter to high-quality biallelic SNPs
+        -> Do I really only want biallelic?
+        -> What about ama1?
+
+        """
+
+        if self.vcf_path is None:
+            raise ValueError("Must run variant calling before filtering.")
+
+        self.MIN_DEPTH = min_depth
+        self.MIN_QUAL = min_qual
+
+        cmd_filter = "bcftools view"
+        cmd_filter += " --min-alleles 2"
+        cmd_filter += " --max-alleles 2"
+        cmd_filter += " --types='snps'"
+        cmd_filter += f" -e 'FORMAT/DP<{self.MIN_DEPTH}||QUAL<{self.MIN_QUAL}'"
+        cmd_filter += f" -Oz -o {output_vcf} {self.vcf_path}"
+
+        subprocess.run(cmd_filter, check=True, shell=True)
+
 
 # ================================================================
 # Concrete implementations
@@ -54,8 +78,6 @@ class BcfTools(VariantCaller):
     # SETTINGS
     ANNOTATE = "FORMAT/DP,FORMAT/AD"
     MAX_DEPTH = 10_000
-    MIN_DEPTH = 40
-    MIN_QUAL = 20
 
     def _run(self, bam_path: str, vcf_path: str) -> None:
         """
@@ -87,17 +109,10 @@ class BcfTools(VariantCaller):
         cmd_pileup += f" -f {self.fasta_path}"
         cmd_pileup += f" {bam_path}"
 
-        cmd_call = "bcftools call -mv -P 0.01 - "
+        # NB: We are returning *all* variants (not using -v)
+        cmd_call = f"bcftools call -m -P 0.01 - -Oz -o {vcf_path}"
 
-        cmd_filter = "bcftools view"
-        cmd_filter += " --min-alleles 2"
-        cmd_filter += " --max-alleles 2"
-        cmd_filter += " --types='snps'"
-        cmd_filter += f" -e 'FORMAT/DP<{self.MIN_DEPTH}||QUAL<{self.MIN_QUAL}' -"
-
-        cmd_tags = f"bcftools +fill-tags -Oz -o {vcf_path} - -- -t FORMAT/VAF"
-
-        cmd = f"{cmd_pileup} | {cmd_call} | {cmd_filter} | {cmd_tags}"
+        cmd = f"{cmd_pileup} | {cmd_call}"
 
         subprocess.run(cmd, check=True, shell=True)
 
@@ -115,8 +130,6 @@ class Clair3Singularity(VariantCaller):
     # In theory, the model should match the version of the basecalling
     # software (guppy/dorado) that was used
     MODEL = "/u/jash/projects/rerio/clair3_models/r1041_e82_400bps_sup_v420"
-    MIN_DEPTH = 40
-    MIN_QUAL = 20
 
     def _mount_dirs(self, bam_path: str, vcf_path: str) -> None:
         """
@@ -160,6 +173,9 @@ class Clair3Singularity(VariantCaller):
         cmd += " --include_all_ctgs"
         cmd += " --enable_phasing"
 
+        # NB: We are returning all variant calls, including 0/0
+        cmd += " --print_ref_calls"
+
         # Send all variants to the full alignment model,
         # at least theoretically maximising performance
         cmd += " --var_pct_full=1.0"
@@ -175,21 +191,6 @@ class Clair3Singularity(VariantCaller):
         clair3_vcf = f"{self.vcf_dir}/phased_merge_output.vcf.gz"
         shutil.copyfile(clair3_vcf, self.vcf_path)
         shutil.copyfile(clair3_vcf + ".tbi", self.vcf_path + ".tbi")
-
-        # Now, let's filter and fill tags
-        cmd_filter = "bcftools view"
-        cmd_filter += " --min-alleles 2"
-        cmd_filter += " --max-alleles 2"
-        cmd_filter += " --types='snps'"
-        cmd_filter += (
-            f" -e 'FORMAT/DP<{self.MIN_DEPTH}||QUAL<{self.MIN_QUAL}' {self.vcf_path}"
-        )
-
-        cmd_tags = f"bcftools +fill-tags -Oz -o {self.vcf_path} - -- -t FORMAT/VAF"
-
-        cmd = f"{cmd_filter} | {cmd_tags}"
-
-        subprocess.run(cmd, check=True, shell=True)
 
 
 # ================================================================

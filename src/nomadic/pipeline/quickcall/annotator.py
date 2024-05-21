@@ -87,115 +87,6 @@ class Consequence:
 
         return cls(*fields)
 
-# @dataclass
-# class Consequence:
-#     """
-#     Encapsulate consequence information from  `bcftools csq`
-
-#     """
-
-#     csq: str
-#     target_gene: str
-#     transcript: str
-#     biotype: str
-
-#     strand: str = ""
-#     aa_change: str = ""
-#     nt_change: str = ""
-
-#     @classmethod
-#     def from_string(cls, csq_string: str):
-#         """
-#         Parse from the output string
-
-#         What to do if "double"?
-#         Or @
-#         Or *
-
-#         """
-#         if csq_string == ".":  # intergenic
-#             return cls(".", ".", ".", ".")
-
-#         if csq_string.startswith("@"):  # compound variety, recorded elsewhere
-#             return cls(".", ".", ".", f"compound{csq_string}")
-
-#         consequences = csq_string.split(",")
-#         if len(consequences) > 1:
-#             warnings.warn(
-#                 f"Found multiple consequences of variant: {csq_string}! Keeping only first."
-#             )
-
-#         fields = consequences[0].split("|")
-#         assert len(fields) >= 4, f"Failed for {csq_string}"
-#         assert len(fields) <= 7, f"Failed for {csq_string}"
-
-#         return cls(*fields)
-
-#     # def _parse_aa_change(self) -> Tuple[int, str, str]:
-#     #     """
-#     #     Parse the AA encoding from `bcftools cqs` into a tuple
-#     #     containing the reference AA, codon, and alternative AA
-
-#     #     """
-#     #     if not self.aa_change:
-#     #         return self.aa_change
-
-#     #     AAs = "ARNDCEQGHILKMFPSTWYV"
-#     #     stop = "\*"
-#     #     match = re.match(f"([0-9]+)([{AAs}|{stop}]+)>[0-9]+([{AAs}|{stop}]+)", self.aa_change)
-
-#     #     if match is None: # Handle syonymous
-#     #         if self.csq != "synonymous":
-#     #             warnings.warn(f"Unable to parse AA change for: {self}. Returning as-is.")
-#     #         return self.aa_change
-
-#     #     pos, from_aa, to_aa = match.groups()
-#     #     if from_aa is None:
-#     #         from_aa = to_aa
-
-#     #     return (pos, from_aa, to_aa)
-
-#     # def get_aa_pos(self) -> int:
-#     #     fields = self._parse_aa_change()
-#     #     if not fields:
-#     #         return None
-#     #     return int(fields[0])
-
-#     # def get_concise_aa_change(self) -> str:
-#     #     fields = self._parse_aa_change()
-#     #     if not fields:
-#     #         return None
-#     #     return f"{fields[1]}{fields[0]}{fields[2]}"
-
-#     def get_concise_aa_change(self) -> str:
-#         """
-#         Get a more concise encoding of the amino acid change
-
-#         TODO:
-#         - Want to add AA on both side of synonyms. Should be doable.
-
-#         """
-
-#         if not self.aa_change:
-#             return self.aa_change
-
-#         AAs = "ARNDCEQGHILKMFPSTWYV"
-#         stop = "\*"
-#         match = re.match(
-#             f"([0-9]+)([{AAs}|{stop}]+)>[0-9]+([{AAs}|{stop}]+)", self.aa_change
-#         )
-
-#         if match is None:
-#             if self.csq != "synonymous":
-#                 warnings.warn(
-#                     f"Unable to parse AA change for: {self}. Returning as-is."
-#                 )
-#             return self.aa_change
-
-#         pos, from_aa, to_aa = match.groups()
-
-#         return f"{from_aa}{pos}{to_aa}"
-
 
 # ================================================================
 # Annotating a VCF with information about amplicons & effects
@@ -220,6 +111,20 @@ class VariantAnnotator:
         self.output_vcf = f"{output_dir}/{os.path.basename(self.vcf_path).replace('.vcf.gz', '.annotated.vcf.gz')}"
         self.output_tsv = self.output_vcf.replace(".vcf.gz", ".tsv")
 
+    def _get_wsaf_command(self, input_vcf: str = "-", output_vcf: str ="") -> str:
+        """
+        Compute the WSAF for each variant based on allelic depths
+
+        """
+
+        cmd = f"bcftools +fill-tags"
+        if output_vcf:
+            cmd += f" -Oz -o {output_vcf}"
+        cmd += f" {input_vcf}"
+        cmd += " -- -t FORMAT/WSAF=1-FORMAT/AD/FORMAT/DP"
+
+        return cmd
+
     def _get_annotate_command(self, input_vcf: str = "-", output_vcf: str = "") -> str:
         """
         Create a string representing command required to annotate variants with
@@ -236,7 +141,7 @@ class VariantAnnotator:
         cmd += f" {input_vcf}"
 
         return cmd
-
+    
     def _get_csq_command(self, input_vcf: str = "-", output_vcf: str = "") -> str:
         """
         Create a string representing command required
@@ -253,18 +158,24 @@ class VariantAnnotator:
         cmd += f" {input_vcf}"
 
         return cmd
-
+    
     def run(self):
         """
         Annotate variant calls using `bcftools csq`
 
         """
 
-        cmd_annot = self._get_annotate_command(
+        cmd_tags = self._get_wsaf_command(
             input_vcf=self.vcf_path,
         )
-        cmd_csq = self._get_csq_command("-", output_vcf=self.output_vcf)
-        cmd = f"{cmd_annot} | {cmd_csq}"
+        cmd_annot = self._get_annotate_command(
+            input_vcf="-",
+        )
+        cmd_csq = self._get_csq_command(
+            input_vcf="-", 
+            output_vcf=self.output_vcf
+        )
+        cmd = f"{cmd_tags} | {cmd_annot} | {cmd_csq}"
         subprocess.run(cmd, shell=True, check=True)
 
     def _convert_to_tsv(self):
@@ -274,6 +185,8 @@ class VariantAnnotator:
 
         """
 
+        # Define fixed and per-sample fields
+        # Note that sample name also gets added.
         fixed = {
             "chrom": "CHROM",
             "pos": "POS",
@@ -283,18 +196,23 @@ class VariantAnnotator:
             "consequence": "BCSQ",
             "amplicon": "AMP_ID",
         }
-        called = {"gt": "GT", "dp": "DP", "wsaf": "VAF"}
+        called = {
+            "gt": "GT", 
+            "dp": "DP", 
+            "wsaf": "WSAF{0}"
+        }
 
+        # Write header
         sep = "\t"
-        cmd_header = (
-            f" echo '{sep.join(list(fixed) + list(called))}\n' > {self.output_tsv}"
-        )
+        cmd_header = f"printf 'sample\t{sep.join(list(fixed) + list(called))}\n' > {self.output_tsv}"
         sep += "%"
-        cmd_query = "bcftools query"
-        cmd_query += (
-            f" -f '%{sep.join(fixed.values())}\t[%{sep.join(called.values())}]\n'"
-        )
-        cmd_query += f" {self.output_vcf} >> {self.output_tsv}"
+
+        # Iterate and query for each sample
+        cmd_query = f"for sample in `bcftools query {self.output_vcf} -l`; do"
+        cmd_query += "  bcftools query -s $sample"
+        cmd_query += f" -f \"$sample\t%{sep.join(fixed.values())}\t[%{sep.join(called.values())}]\n\""
+        cmd_query += f" {self.output_vcf} >> {self.output_tsv};"
+        cmd_query += " done;"
 
         cmd = f"{cmd_header} && {cmd_query}"
         subprocess.run(cmd, shell=True, check=True)
@@ -335,3 +253,4 @@ class VariantAnnotator:
         self._convert_to_tsv()
         self._parse_consequences()
 
+        

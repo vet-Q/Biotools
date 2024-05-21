@@ -21,7 +21,10 @@ from .callers import caller_collection
     required=False,
     help="Variant calling method.",
 )
-def quickcall(expt_dir, config, barcode, bed_path, method):
+@click.option(
+    "--overview", is_flag=True, help="Produce an overview across all barcodes."
+)
+def quickcall(expt_dir, config, barcode, bed_path, method, overview):
     """
     Quickly call variants and annotate them with a given
     variant calling method
@@ -29,5 +32,5 @@ def quickcall(expt_dir, config, barcode, bed_path, method):
     """
     from .main import quickcall
 
-    quickcall(expt_dir, config, barcode, bed_path, method)
+    quickcall(expt_dir, config, barcode, bed_path, method, overview)
 
