@@ -24,7 +24,7 @@ class VariantMerger:
         cmd_view += " --min-alleles 2"
         cmd_view += " --max-alleles 2"
         cmd_view += " --types='snps'"
-        cmd_view += f" -e 'SMPL_MAX(FORMAT/DP)<{self.DEPTH_MIN}'"
+        cmd_view += f" -e 'MAX(FORMAT/DP)<{self.DEPTH_MIN}'"
         cmd_view += " - " # Pipe
 
         cmd_filter = "bcftools filter -Oz"

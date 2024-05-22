@@ -198,6 +198,7 @@ class VariantAnnotator:
         }
         called = {
             "gt": "GT", 
+            "gq": "GQ",
             "dp": "DP", 
             "wsaf": "WSAF{0}"
         }

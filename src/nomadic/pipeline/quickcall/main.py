@@ -72,12 +72,16 @@ def quickcall_single(expt_dir: str, config: str, barcode: str, bed_path: str, me
 
         print("Filtering variants...")
         filtered_vcf = vcf_path.replace(".unfiltered.vcf.gz", ".filtered.vcf.gz")
-        caller.filter(output_vcf=filtered_vcf)
+        caller.filter(output_vcf=filtered_vcf, bed_path=bed_path)
+
+        print("Reducing to biallelic...")
+        biallelic_vcf = vcf_path.replace(".unfiltered.vcf.gz", ".biallelic.filtered.vcf.gz")
+        caller.filter(output_vcf=biallelic_vcf, to_biallelic=True, bed_path=bed_path)
 
         # Annotation
         print("Annotating variants...")
         annotator = VariantAnnotator(
-            filtered_vcf, # Note that we annotated only filtered VCF
+            biallelic_vcf, # Note that we annotated only filtered VCF
             bed_path,
             reference,
             output_dir=output_dir
@@ -116,7 +120,7 @@ def quickcall_merge(expt_dir: str, config: str, bed_path: str, method: str) -> N
         input_dir = f"{barcode_dir}/quickcall/{method}"
 
         # Path to *complete* bam file
-        vcf_path = f"{input_dir}/{barcode}.{reference.name}.{method}.unfiltered.vcf.gz"
+        vcf_path = f"{input_dir}/{barcode}.{reference.name}.{method}.filtered.vcf.gz"
 
         if os.path.exists(vcf_path):
             vcfs.append(vcf_path)

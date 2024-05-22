@@ -44,11 +44,16 @@ class VariantCaller(ABC):
         # Index
         bcftools_index(self.vcf_path)
 
-    def filter(self, output_vcf: str, min_depth: int = 50, min_qual: int = 20) -> None:
+    def filter(self, 
+               output_vcf: str, 
+               bed_path: str,
+               min_depth: int = 50, 
+               #min_qual: int = 20,
+               to_biallelic: bool = False
+               ) -> None:
         """
-        Filter to high-quality biallelic SNPs
-        -> Do I really only want biallelic?
-        -> What about ama1?
+        Filters the output VCF to only regions contained within
+        `bed_path`; also optionally excludes sites below a threshold
 
         """
 
@@ -56,16 +61,27 @@ class VariantCaller(ABC):
             raise ValueError("Must run variant calling before filtering.")
 
         self.MIN_DEPTH = min_depth
-        self.MIN_QUAL = min_qual
+        #self.MIN_QUAL = min_qual
 
-        cmd_filter = "bcftools view"
-        cmd_filter += " --min-alleles 2"
-        cmd_filter += " --max-alleles 2"
-        cmd_filter += " --types='snps'"
-        cmd_filter += f" -e 'FORMAT/DP<{self.MIN_DEPTH}||QUAL<{self.MIN_QUAL}'"
-        cmd_filter += f" -Oz -o {output_vcf} {self.vcf_path}"
+        cmd_view = "bcftools view"
+        cmd_view += f" -R {bed_path}"
+        if to_biallelic:
+            cmd_view += " --types='snps'"
+            cmd_view += " --min-alleles 2"
+            cmd_view += " --max-alleles 2"
+        cmd_view += f" {self.vcf_path}"
 
-        subprocess.run(cmd_filter, check=True, shell=True)
+        cmd_filter = "bcftools filter"
+        cmd_filter += " -S ."
+        cmd_filter += f" -e 'FORMAT/DP<{self.MIN_DEPTH}'" # ||QUAL<{self.MIN_QUAL}'"
+        cmd_filter += f" -Oz -o {output_vcf} -"
+
+        cmd = f"{cmd_view} | {cmd_filter}"
+
+        subprocess.run(cmd, check=True, shell=True)
+
+        # Index
+        bcftools_index(output_vcf)
 
 
 # ================================================================
@@ -76,7 +92,8 @@ class VariantCaller(ABC):
 
 class BcfTools(VariantCaller):
     # SETTINGS
-    ANNOTATE = "FORMAT/DP,FORMAT/AD"
+    ANNOTATE_MPILEUP = "FORMAT/DP,FORMAT/AD"
+    ANNOTATE_CALL = "FORMAT/GQ"
     MAX_DEPTH = 10_000
 
     def _run(self, bam_path: str, vcf_path: str) -> None:
@@ -104,13 +121,15 @@ class BcfTools(VariantCaller):
 
         cmd_pileup = "bcftools mpileup -Ou"
         cmd_pileup += f" -X ont"  # set to ONT mode.
-        cmd_pileup += f" --annotate {self.ANNOTATE}"
+        cmd_pileup += f" --annotate {self.ANNOTATE_MPILEUP}"
         cmd_pileup += f" --max-depth {self.MAX_DEPTH}"
         cmd_pileup += f" -f {self.fasta_path}"
         cmd_pileup += f" {bam_path}"
 
         # NB: We are returning *all* variants (not using -v)
-        cmd_call = f"bcftools call -m -P 0.01 - -Oz -o {vcf_path}"
+        cmd_call = f"bcftools call -a 'FORMAT/GQ' -m -P 0.01 -Oz -o {vcf_path} -"
+        # #cmd_call += f" --annotate {self.ANNOTATE_CALL}"
+        # cmd_call += " -Oz -o {vcf_path} -"
 
         cmd = f"{cmd_pileup} | {cmd_call}"
 
