@@ -77,6 +77,7 @@ from .error.commands import error
 from .depth.commands import depth
 from .quickcall.commands import quickcall
 from .bedcov.commands import bedcov
+from .checkcontam.commands import checkcontam
 
 cli.add_command(basecall)
 cli.add_command(barcode)
@@ -90,6 +91,7 @@ cli.add_command(error)
 cli.add_command(depth)
 cli.add_command(quickcall)
 cli.add_command(bedcov)
+cli.add_command(checkcontam)
 
 from .bmrc.commands import bmrc
 
