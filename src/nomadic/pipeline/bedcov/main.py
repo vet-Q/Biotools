@@ -111,7 +111,7 @@ def bedcov_merge(expt_dir: str, config: str, bed_path: str) -> None:
     # Write
     output_csv = f"{output_dir}/summary.bedcov.csv"
     print(f"  Writing to: {output_csv}")
-    final_df.to_csv(output_csv)
+    final_df.to_csv(output_csv, index=False)
     print("Done.")
 
     print_footer(t0)
