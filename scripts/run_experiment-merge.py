@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import pandas as pd
 from dataclasses import dataclass
-from nomadic.lib.dirs import ExperimentDirectories
+from nomadic.lib.dirs import produce_dir, ExperimentDirectories
 from nomadic.lib.process_bams import samtools_index, samtools_merge
 
 
@@ -110,9 +110,10 @@ def main(new_expt_name: str, input_metadata: str) -> None:
 
         print("-" * 80)
         # Create new barcode directory
-        new_barcode = f"barcode{ix:04d}"
+        new_barcode = f"barcode{(ix+1):04d}"
         new_barcode_dir = new_expt.get_barcode_dir(new_barcode)
-        new_bam_path = f"{new_barcode_dir}/bams/{new_barcode}.Pf3D7.final.sorted.bam"
+        new_bam_dir = produce_dir(new_barcode_dir, "bams")
+        new_bam_path = f"{new_bam_dir}/{new_barcode}.Pf3D7.final.sorted.bam"
 
         old_bams = [
             get_pf_bam(expt_names[batch], barcode)
