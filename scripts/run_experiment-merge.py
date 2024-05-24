@@ -33,7 +33,7 @@ expt_names = {
 
 
 def get_barcodes_dir(expt_name: str) -> str:
-    return f"../experiments/{expt_name}/nomadic/dorado/sup/single_end_strict/barcodes"
+    return f"experiments/{expt_name}/nomadic/dorado/sup/single_end_strict/barcodes"
 
 
 def get_barcode_dir(expt_name: str, barcode: str) -> str:
