@@ -42,7 +42,7 @@ def get_barcode_dir(expt_name: str, barcode: str) -> str:
 
 
 def get_pf_bam(expt_name: str, barcode: str) -> str:
-    bam_path = f"{get_barcode_dir(expt_name, barcode)}/{barcode}.Pf3D7.final.sorted.bam"
+    bam_path = f"{get_barcode_dir(expt_name, barcode)}/bams/{barcode}.Pf3D7.final.sorted.bam"
     if not os.path.exists(bam_path):
         raise ValueError(f"Bam not found at {bam_path}!")
 
