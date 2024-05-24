@@ -22,7 +22,7 @@ class BasicArguments:
         self.barcode = barcode
 
 
-def build_parameter_dict(expt_dir, config, barcode=None):
+def build_parameter_dict(expt_dir, config, barcode=None, barcode_width: str = "narrow"):
     """
     Build a parameter dictionary for NOMADIC, based on the commad line inputs
 
@@ -37,7 +37,10 @@ def build_parameter_dict(expt_dir, config, barcode=None):
 
     # Format barcode parsing
     if args.barcode:
-        args.focus_barcode = f"barcode{args.barcode:02d}"
+        if barcode_width == "narrow":
+            args.focus_barcode = f"barcode{args.barcode:02d}"
+        else:
+            args.focus_barcode = f"barcode{args.barcode:04d}"
 
     return args.__dict__
 
