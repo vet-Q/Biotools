@@ -133,10 +133,10 @@ def main(new_expt_name: str, input_metadata: str) -> None:
         else:
             print("  merging...")
             # Merge operation
-            unsorted_bam = new_bam_path.replace(".sorted.bam", ".bam")
-            samtools_merge(old_bams, unsorted_bam)
-            cmd = f"samtools sort -o {new_bam_path} {unsorted_bam}"
-            subprocess.run(cmd, check=True, shell=True)
+            #unsorted_bam = new_bam_path.replace(".sorted.bam", ".bam")
+            samtools_merge(old_bams, new_bam_path) # produces sorted output!
+            #cmd = f"samtools sort -o {new_bam_path} {unsorted_bam}"
+            #subprocess.run(cmd, check=True, shell=True)
 
         # Index
         print("  indexing...")
