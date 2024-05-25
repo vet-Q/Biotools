@@ -35,6 +35,8 @@ def write_fasta_from_dict(input_dt, output_fasta):
     """
     with open(output_fasta, "w") as fasta:
         for header, seq in input_dt.items():
-            fasta.write(f">{header}\n")
+            if not header.startswith(">"):
+                header = f">{header}"
+            fasta.write(f"{header}\n")
             fasta.write(f"{seq}\n")
 
