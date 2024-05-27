@@ -13,6 +13,7 @@
 # SETTINGS
 expt_dir={expt_dir}
 config={config}
+bed_path=configs/beds/nomads8.amplicons.bed
 
 # LOAD ANACONDA
 module load anaconda/3/.2023.03
@@ -25,8 +26,12 @@ nomadic map -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
 nomadic remap -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
 nomadic qcbams -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
 nomadic targets -e $expt_dir -c $config -b $SLURM_ARRAY_TASK_ID
-nomadic call -e $expt_dir -c $config -m bcftools -b $SLURM_ARRAY_TASK_ID
+nomadic bedcov -e $expt_dir -c $config -r $bed_path -b $SLURM_ARRAY_TASK_ID
+nomadic quickcall -e $expt_dir -c $config -m bcftools -r $bed_path -b $SLURM_ARRAY_TASK_ID
+nomadic quickcall -e $expt_dir -c $config -m bcftools -r $bed_path -b $SLURM_ARRAY_TASK_ID
+#nomadic call -e $expt_dir -c $config -m bcftools -b $SLURM_ARRAY_TASK_ID
 
 # To run Clair3 via Singularity, need to load singularity module
 module load singularity/link2apptainer
-nomadic call -e $expt_dir -c $config -m clair3sing -b $SLURM_ARRAY_TASK_ID
+nomadic quickcall -e $expt_dir -c $config -m clair3_singularity -r $bed_path -b $SLURM_ARRAY_TASK_ID
+#nomadic call -e $expt_dir -c $config -m clair3sing -b $SLURM_ARRAY_TASK_ID
