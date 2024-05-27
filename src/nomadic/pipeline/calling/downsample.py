@@ -8,6 +8,10 @@ class BamDownSampler:
     """
     Class to manage the downsampling of a `.bam` file
 
+    TODO:
+    - Can use this to downsample for quickcall; or just embed in a small
+    script that will be useful for creating the downsamples
+
     """
 
     def __init__(self, bam_path):
@@ -25,7 +29,7 @@ class BamDownSampler:
         # Store downsampled bam information
         self.downsampled_bam_path = None
 
-    def _get_n_reads_total(self, bam_path):
+    def _get_n_reads_total(self, bam_path: str) -> int:
         """Compute total number of reads in a bam file"""
 
         cmd = f"samtools view -c {bam_path}"
@@ -34,18 +38,21 @@ class BamDownSampler:
 
         return n_total
 
-    def _gen_unique_name(self):
+    def _gen_unique_name(self) -> str:
         """Generate a unique name for the downsampled .bam file"""
 
         fn_id = uuid.uuid4().hex
 
         return f"{self.bam_dir}/temp.{fn_id}.bam"
 
-    def create_downsample(self, n_reads, verbose=True):
+    def create_downsample(self, n_reads: int, downsampled_bam_path: str= None, verbose=True) -> None:
         """Downsample a .bam to a specific number of reads (approximately)"""
 
         # Prepare an output file name
-        self.downsampled_bam_path = self._gen_unique_name()
+        if downsampled_bam_path is None:
+            self.downsampled_bam_path = self._gen_unique_name()
+        else:
+            self.downsampled_bam_path = downsampled_bam_path
 
         # Compute fraction to sample
         frac = n_reads / self.n_reads_total
@@ -73,12 +80,9 @@ class BamDownSampler:
         cmd = f"samtools index {self.downsampled_bam_path}"
         subprocess.run(cmd, shell=True)
 
-        return None
-
-    def remove_downsample(self):
+    def remove_downsample(self) -> None:
         """Remove the most recently created downsample and it's index"""
 
         os.remove(self.downsampled_bam_path)
         os.remove(f"{self.downsampled_bam_path}.bai")
 
-        return None
